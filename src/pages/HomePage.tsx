@@ -38,6 +38,7 @@ export default function HomePage() {
 
     
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
     const [paidNames, setPaidNames] = useState<Set<string>>(new Set());
     const [showSummary, setShowSummary] = useState(true);
     
@@ -104,17 +105,19 @@ export default function HomePage() {
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = async (guestId: string) => {
-        if (!confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យភ្ញៀវនេះមែនទេ?")) {
-            return;
-        }
+    const handleDelete = async (guest: Guest) => {
+        setGuestToDelete(guest);
+    };
+
+    const confirmDelete = async () => {
+        if (!guestToDelete) return;
 
         try {
-            setDeletingId(guestId);
-            await deleteDoc(doc(db, "guests", guestId));
+            setDeletingId(guestToDelete.id);
+            await deleteDoc(doc(db, "guests", guestToDelete.id));
             
             // Update local state
-            setGuests(prev => prev.filter(guest => guest.id !== guestId));
+            setGuests(prev => prev.filter(g => g.id !== guestToDelete.id));
             
             toast.success("✅ លុបភ្ញៀវបានជោគជ័យ!");
         } catch (err) {
@@ -122,6 +125,7 @@ export default function HomePage() {
             toast.error("❌ មិនអាចលុបភ្ញៀវបានទេ។");
         } finally {
             setDeletingId(null);
+            setGuestToDelete(null);
         }
     };
 
@@ -541,8 +545,8 @@ export default function HomePage() {
                                                         >
                                                             <Pencil size={18} />
                                                         </Button>
-                                                        <Button
-                                                            onClick={() => handleDelete(guest.id)}
+                                                         <Button
+                                                            onClick={() => handleDelete(guest)}
                                                             variant="ghost"
                                                             size="icon"
                                                             disabled={deletingId === guest.id}
@@ -602,6 +606,27 @@ export default function HomePage() {
                             className="bg-red-500 hover:bg-red-600 text-white"
                         >
                             ចាកចេញ
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Guest Delete Confirmation Modal */}
+            <AlertDialog open={!!guestToDelete} onOpenChange={(open) => !open && setGuestToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>តើអ្នកពិតជាចង់លុបទិន្នន័យភ្ញៀវនេះមែនទេ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            ការលុបនេះនឹងដកឈ្មោះ <b>{guestToDelete?.fullName}</b> ចេញពីបញ្ជីជាអចិន្ត្រៃយ៍ ហើយមិនអាចទាញយកមកវិញបានទេ។
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>បោះបង់</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                            លុបភី្ញៀវ
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

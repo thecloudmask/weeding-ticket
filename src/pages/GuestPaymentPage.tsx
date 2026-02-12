@@ -62,6 +62,24 @@ import {
   DrawerFooter,
 } from '../components/ui/drawer';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -81,6 +99,8 @@ export default function GuestPaymentPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [paymentToDelete, setPaymentToDelete] = useState<GuestPayment | null>(null);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('All');
@@ -117,11 +137,13 @@ export default function GuestPaymentPage() {
   };
 
   const handleLogout = async () => {
+    setIsLogoutDialogOpen(true);
+  };
+
+  const confirmLogout = async () => {
     try {
-      if (confirm("តើអ្នកពិតជាចង់ចាកចេញមែនទេ?")) {
-        await signOut(auth);
-        toast.success("✅ ចាកចេញបានជោគជ័យ!");
-      }
+      await signOut(auth);
+      toast.success("✅ ចាកចេញបានជោគជ័យ!");
     } catch (err) {
       console.error("Error logging out:", err);
       toast.error("❌ មិនអាចចាកចេញបានទេ។");
@@ -252,19 +274,24 @@ export default function GuestPaymentPage() {
     setShowAddModal(true);
   };
 
-  const handleDeleteGuest = async (id: string) => {
-    if (!confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?')) return;
+  const handleDeleteGuest = async (payment: GuestPayment) => {
+    setPaymentToDelete(payment);
+  };
+
+  const confirmDeletePayment = async () => {
+    if (!paymentToDelete) return;
 
     try {
-      setDeletingId(id);
-      await deleteDoc(doc(db, 'guestPayments', id));
+      setDeletingId(paymentToDelete.id);
+      await deleteDoc(doc(db, 'guestPayments', paymentToDelete.id));
       toast.success('លុបទិន្នន័យបានជោគជ័យ');
       fetchGuests();
     } catch (error) {
       console.error('Error deleting guest:', error);
       toast.error('មិនអាចលុបទិន្នន័យបានទេ។');
     } finally {
-      setDeletingId(null); // Reset deletingId after deletion attempt
+      setDeletingId(null);
+      setPaymentToDelete(null);
     }
   };
 
@@ -575,79 +602,91 @@ export default function GuestPaymentPage() {
             <p className="text-amber-700 font-medium tracking-widest text-xs uppercase animate-pulse">កំពុងទាញយកទិន្នន័យ...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence mode="popLayout">
-              {filteredGuests.map((guest) => (
-                <div
-                  key={guest.id}
-                  className="bg-white rounded-2xl p-8 min-h-[260px] border border-primary/10 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-black text-slate-900 leading-tight mb-2 group-hover:text-primary transition-colors">{guest.name}</h3>
-                        {guest.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin size={14} className="text-primary/60" />
-                            <span className="text-slate-500 text-sm font-medium">{guest.location}</span>
-                          </div>
-                        )}
-                      </div>
-                    <div className="flex gap-2.5">
-                      <button
-                        onClick={() => handleSendThanks(guest)}
-                        title="ផ្ញើសារអរគុណ"
-                        className="p-3 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all active:scale-90 cursor-pointer border border-emerald-100 shadow-sm"
-                      >
-                        <Send size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleEditClick(guest)}
-                        className="p-2.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all active:scale-90 cursor-pointer"
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteGuest(guest.id)}
-                        disabled={deletingId === guest.id}
-                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90 cursor-pointer disabled:opacity-50"
-                      >
-                        {deletingId === guest.id ? (
-                          <RefreshCw size={18} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
-                    </div>
-                    </div>
-
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-lg bg-primary/5 border border-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-6">
-                      {guest.category}
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${getPaymentMethodStyles(guest.paymentMethod).bg}`}>
-                      <div className={`w-2 h-2 rounded-full ${getPaymentMethodStyles(guest.paymentMethod).dot}`} />
-                      <span className="text-xs font-bold uppercase tracking-widest">{guest.paymentMethod}</span>
-                    </div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-primary text-base font-black">{guest.currency === 'USD' ? '$' : '៛'}</span>
-                      <span className="text-4xl font-black text-slate-900 tracking-tight">
-                        {guest.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {guest.note && (
-                    <div className="mt-6 p-4 bg-slate-50/80 rounded-xl border border-slate-100/50 animate-in fade-in slide-in-from-bottom-2">
-                      <p className="text-slate-500 text-base leading-relaxed italic line-clamp-2">
-                        "{guest.note}"
-                      </p>
-                    </div>
-                  )}</div>
-              ))}
-            </AnimatePresence>
+          <div className="bg-white border border-primary/20 rounded-2xl shadow-sm overflow-hidden">
+             <div className="overflow-x-auto">
+               <Table>
+                 <TableHeader className="bg-primary/5">
+                   <TableRow className="hover:bg-transparent border-primary/10">
+                     <TableHead className="text-primary font-black text-sm uppercase px-4 py-6 text-center w-[60px]">ល.រ</TableHead>
+                     <TableHead className="text-primary font-black text-sm uppercase px-6 py-6">ឈ្មោះពេញ</TableHead>
+                     <TableHead className="text-primary font-black text-sm uppercase py-6">ត្រូវជា?/ទីកន្លែង</TableHead>
+                     <TableHead className="text-primary font-black text-sm uppercase py-6">មធ្យោបាយចងដៃ</TableHead>
+                     <TableHead className="text-primary font-black text-sm uppercase py-6">ចំនួនទឹកប្រាក់</TableHead>
+                     <TableHead className="text-primary font-black text-sm uppercase py-6 text-right px-8">សកម្មភាព</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   <AnimatePresence mode="popLayout">
+                     {filteredGuests.map((guest, index) => (
+                       <TableRow key={guest.id} className="hover:bg-primary/[0.02] transition-colors border-primary/5 group">
+                         <TableCell className="text-slate-400 font-bold px-4 py-5 text-center font-mono">
+                           {(index + 1).toString().padStart(2, '0')}
+                         </TableCell>
+                         <TableCell className="px-6 py-5">
+                            <div className="flex flex-col">
+                              <span className="text-base font-black text-slate-900 group-hover:text-primary transition-colors">{guest.name}</span>
+                              {guest.note && <span className="text-xs text-slate-400 italic line-clamp-1 mt-0.5">"{guest.note}"</span>}
+                            </div>
+                         </TableCell>
+                         <TableCell className="py-5">
+                            <div className="flex flex-col gap-1">
+                               <span className="text-xs font-bold text-primary uppercase tracking-wider">{guest.category}</span>
+                               {guest.location && (
+                                 <div className="flex items-center gap-1 opacity-60">
+                                   <MapPin size={10} />
+                                   <span className="text-[10px] font-medium">{guest.location}</span>
+                                 </div>
+                               )}
+                            </div>
+                         </TableCell>
+                         <TableCell className="py-5">
+                            <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border w-fit ${getPaymentMethodStyles(guest.paymentMethod).bg}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${getPaymentMethodStyles(guest.paymentMethod).dot}`} />
+                              <span className="text-[10px] font-bold uppercase tracking-widest">{guest.paymentMethod}</span>
+                            </div>
+                         </TableCell>
+                         <TableCell className="py-5">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-primary text-xs font-black">{guest.currency === 'USD' ? '$' : '៛'}</span>
+                              <span className="text-lg font-black text-slate-900 tracking-tight">
+                                {guest.amount.toLocaleString()}
+                              </span>
+                            </div>
+                         </TableCell>
+                         <TableCell className="text-right px-8 py-5">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleSendThanks(guest)}
+                                title="ផ្ញើសារអរគុណ"
+                                className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all active:scale-90 cursor-pointer border border-emerald-100 shadow-sm"
+                              >
+                                <Send size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleEditClick(guest)}
+                                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90 cursor-pointer border border-slate-100"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteGuest(guest)}
+                                disabled={deletingId === guest.id}
+                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90 cursor-pointer border border-slate-100 disabled:opacity-50"
+                              >
+                                {deletingId === guest.id ? (
+                                  <RefreshCw size={16} className="animate-spin" />
+                                ) : (
+                                  <Trash2 size={16} />
+                                )}
+                              </button>
+                            </div>
+                         </TableCell>
+                       </TableRow>
+                     ))}
+                   </AnimatePresence>
+                 </TableBody>
+               </Table>
+             </div>
           </div>
         )}
 
@@ -655,11 +694,17 @@ export default function GuestPaymentPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-16"
+            className="text-center py-20 bg-white border border-primary/10 rounded-2xl shadow-sm mt-4"
           >
-            <Users className="w-24 h-24 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-300 text-xl">រកមិនឃើញភ្ញៀវ</p>
-            <p className="text-gray-400 mt-2">សូមបន្ថែមភ្ញៀវដំបូងរបស់អ្នកដើម្បីចាប់ផ្តើម!</p>
+            <Users className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-400 text-lg italic">រកមិនឃើញទិន្នន័យដែលអ្នកស្វែងរកទេ</p>
+            <Button 
+              onClick={() => setSearchQuery("")} 
+              variant="outline" 
+              className="mt-6 h-11 px-8 rounded-xl border-slate-200"
+            >
+              បង្ហាញទាំងអស់ឡើងវិញ
+            </Button>
           </motion.div>
         )}
       </div>
@@ -991,6 +1036,48 @@ export default function GuestPaymentPage() {
           <p>បោះពុម្ពដោយស្វ័យប្រវត្តិពីប្រព័ន្ធគ្របគ្រងមង្គលការ</p>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>តើអ្នកពិតជាចង់ចាកចេញមែនទេ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              អ្នកនឹងត្រូវបានចាកចេញពីគណនី ហើយត្រឡប់ទៅកាន់ទំព័រចូលប្រើប្រាស់វិញ។
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>បោះបង់</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLogout}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              ចាកចេញ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={!!paymentToDelete} onOpenChange={(open) => !open && setPaymentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ការលុបនេះនឹងដកព័ត៌មានចំណងដៃរបស់ <b>{paymentToDelete?.name}</b> ចេញពីបញ្ជីជាអចិន្ត្រៃយ៍។
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>បោះបង់</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePayment}
+              className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+            >
+              លុបទិន្នន័យ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

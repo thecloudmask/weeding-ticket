@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import ReactSVG from '../assets/react.svg';
+import { toast } from "sonner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -26,7 +27,7 @@ export default function Login() {
       navigate("/");
     } catch (error) {
       console.error(error);
-      alert("បរាជ័យក្នុងការចូលប្រើប្រាស់។ សូមពិនិត្យអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នកម្តងទៀត។");
+      toast.error("បរាជ័យក្នុងការចូលប្រើប្រាស់។ សូមពិនិត្យអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នកម្តងទៀត។");
     } finally {
       setIsSubmitting(false);
     }

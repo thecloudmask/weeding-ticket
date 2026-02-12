@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '@/assets/css/tailwind-conversion.css';
 import btnGreetingImg from '../assets/img/btn-greeting.png';
+import { toast } from 'sonner';
 
 interface Comment {
   name: string;
@@ -33,7 +34,7 @@ const CommentForm: React.FC = () => {
     e.preventDefault();
     
     if (!name.trim() || !comment.trim()) {
-      alert('Please fill in both name and comment fields.');
+      toast.error('សូមបំពេញឈ្មោះ និងពាក្យជូនពររបស់អ្នកអោយបានគ្រប់គ្រាន់។');
       return;
     }
 

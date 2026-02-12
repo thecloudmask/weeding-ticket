@@ -34,6 +34,7 @@ import { WeddingCountdown } from "@/components/CountDown";
 import Lottie from "lottie-react";
 import giftAnimationData from "../assets/lottie/Referralgift.json";
 import arrowAnimationData from "../assets/lottie/arrow.json";
+import { toast } from "sonner";
 
 interface Guest {
     id: string;
@@ -157,6 +158,7 @@ export default function WeddingFlowPage() {
     const [showWishesInput, setShowWishesInput] = useState(false);
     const [showTelegramQR, setShowTelegramQR] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -186,6 +188,8 @@ export default function WeddingFlowPage() {
                         data.status = 'pending';
                     }
                     setGuest(data);
+                    if (data.wishes) setWishes(data.wishes);
+                    if (data.declineReason) setDeclineReason(data.declineReason);
                 }
             } catch (error) {
                 console.error("Error fetching guest:", error);
@@ -257,9 +261,11 @@ export default function WeddingFlowPage() {
                 wishes: status === 'attending' ? message : prev?.wishes
             }));
 
+            setIsEditing(false);
             if (status === 'declined') setShowDeclineInput(false);
             if (status === 'attending') setShowWishesInput(false);
-
+            
+            toast.success(status === 'attending' ? "អរគុណសម្រាប់ការឆ្លើយតប!" : "សោកស្តាយដែលបងមិនបានចូលរួម");
         } catch (err) {
             console.error("Error updating RSVP:", err);
         }
@@ -967,107 +973,157 @@ if (loading)
                                     </div>
 
                                     <div className="flex flex-col gap-4">
-                                        <button
-                                            onClick={() => setShowWishesInput(true)}
-                                            className={`relative group h-14 overflow-hidden rounded-2xl transition-all active:scale-95 ${
-                                                guest?.status === 'attending' 
-                                                ? 'bg-[#BF953F] text-black font-bold shadow-[0_0_20px_rgba(191,149,63,0.5)]' 
-                                                : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-center gap-3 relative z-10 px-6">
-                                                <Check size={20} strokeWidth={3} className={guest?.status === 'attending' ? 'text-black' : 'text-[#BF953F]'} />
-                                                <span style={{fontFamily: "Taprom", fontSize: "1.1rem"}}>យល់ព្រមចូលរួម</span>
-                                            </div>
-                                            {guest?.status === 'attending' && <motion.div layoutId="rsvp-active" className="absolute inset-0 bg-white/20" />}
-                                        </button>
-
-                                        <AnimatePresence>
-                                            {showWishesInput && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <div className="bg-[#BF953F]/10 border border-[#BF953F]/30 rounded-2xl p-4 mt-2 mb-4">
-                                                        <label className="text-[#BF953F] text-sm mb-2 block font-['Taprom']">សូមសរសេរពាក្យជូនពរ (មិនបង្ខំ):</label>
-                                                        <textarea
-                                                            value={wishes}
-                                                            onChange={(e) => setWishes(e.target.value)}
-                                                            className="w-full bg-black/20 border border-[#BF953F]/30 rounded-xl p-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#BF953F] h-24 resize-none mb-3"
-                                                            placeholder="ជូនពរឱ្យ..."
-                                                        />
-                                                        <div className="flex gap-2 justify-end">
-                                                            <button
-                                                                onClick={() => setShowWishesInput(false)}
-                                                                className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5 transition-colors"
-                                                            >
-                                                                ត្រឡប់ក្រោយ
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleRSVP('attending', wishes)}
-                                                                className="px-6 py-2 rounded-xl text-sm bg-[#BF953F] hover:bg-[#a27e33] text-black font-bold transition-colors shadow-lg shadow-[#BF953F]/20"
-                                                            >
-                                                                បញ្ជូនចម្លើយ
-                                                            </button>
-                                                        </div>
+                                        {((guest?.status === 'attending' || guest?.status === 'declined') && !isEditing) ? (
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="bg-white/5 border border-[#BF953F]/30 rounded-2xl p-6"
+                                            >
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${guest.status === 'attending' ? 'bg-[#BF953F]/20 text-[#BF953F]' : 'bg-red-500/20 text-red-500'}`}>
+                                                        {guest.status === 'attending' ? <Check size={32} /> : <UserX size={32} />}
                                                     </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-
-                                        <button
-                                            onClick={() => setShowDeclineInput(true)}
-                                            className={`relative h-14 rounded-2xl transition-all active:scale-95 ${
-                                                guest?.status === 'declined' 
-                                                ? 'bg-red-500/80 text-white font-bold shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
-                                                : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-center gap-3 px-6">
-                                                <UserX size={20} strokeWidth={3} className={guest?.status === 'declined' ? 'text-white' : 'text-red-400/60'} />
-                                                <span style={{fontFamily: "Taprom", fontSize: "1rem"}}>មិនអាចចូលរួមបាន</span>
-                                            </div>
-                                        </button>
-                                        
-                                        <AnimatePresence>
-                                            {showDeclineInput && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-2">
-                                                        <label className="text-white/80 text-sm mb-2 block font-['Taprom']">សូមបញ្ជាក់មូលហេតុ (មិនបង្ខំ):</label>
-                                                        <textarea
-                                                            value={declineReason}
-                                                            onChange={(e) => setDeclineReason(e.target.value)}
-                                                            className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#BF953F] h-24 resize-none mb-3"
-                                                            placeholder="មូលហេតុ..."
-                                                        />
-                                                        <div className="flex gap-2 justify-end">
-                                                            <button
-                                                                onClick={() => setShowDeclineInput(false)}
-                                                                className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5 transition-colors"
-                                                            >
-                                                                ត្រឡប់ក្រោយ
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleRSVP('declined', declineReason)}
-                                                                className="px-6 py-2 rounded-xl text-sm bg-red-500 hover:bg-red-600 text-white font-bold transition-colors shadow-lg shadow-red-500/20"
-                                                            >
-                                                                បញ្ជូនចម្លើយ
-                                                            </button>
+                                                    
+                                                    <div>
+                                                        <div style={{fontFamily: "Moulpali"}} className={`text-lg mb-1 ${guest.status === 'attending' ? 'text-[#BF953F]' : 'text-red-400'}`}>
+                                                            {guest.status === 'attending' ? 'យល់ព្រមចូលរួម' : 'មិនអាចចូលរួមបាន'}
                                                         </div>
+                                                        <p style={{fontFamily: "Taprom"}} className="text-white/60 text-sm italic">
+                                                            {guest.status === 'attending' 
+                                                                ? (guest.wishes ? `"${guest.wishes}"` : "លោកអ្នកនឹងចូលរួមកម្មវិធីនេះ") 
+                                                                : (guest.declineReason ? `"${guest.declineReason}"` : "លោកអ្នកមិនអាចចូលរួមបានទេ")
+                                                            }
+                                                        </p>
                                                     </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+
+                                                    <button 
+                                                        onClick={() => setIsEditing(true)}
+                                                        className="mt-2 text-[#BF953F] hover:text-[#F3E5AB] text-sm font-bold flex items-center gap-2 transition-colors group"
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-12 transition-transform">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg>
+                                                        កែប្រែការឆ្លើយតប
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => {
+                                                        setShowWishesInput(true);
+                                                        setShowDeclineInput(false);
+                                                    }}
+                                                    className={`relative group h-14 overflow-hidden rounded-2xl transition-all active:scale-95 ${
+                                                        guest?.status === 'attending' 
+                                                        ? 'bg-[#BF953F] text-black font-bold shadow-[0_0_20px_rgba(191,149,63,0.5)]' 
+                                                        : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-center gap-3 relative z-10 px-6">
+                                                        <Check size={20} strokeWidth={3} className={guest?.status === 'attending' ? 'text-black' : 'text-[#BF953F]'} />
+                                                        <span style={{fontFamily: "Taprom", fontSize: "1.1rem"}}>យល់ព្រមចូលរួម</span>
+                                                    </div>
+                                                    {guest?.status === 'attending' && <motion.div layoutId="rsvp-active" className="absolute inset-0 bg-white/20" />}
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {showWishesInput && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="bg-[#BF953F]/10 border border-[#BF953F]/30 rounded-2xl p-4 mt-2 mb-4">
+                                                                <label className="text-[#BF953F] text-sm mb-2 block font-['Taprom']">សូមសរសេរពាក្យជូនពរ (មិនបង្ខំ):</label>
+                                                                <textarea
+                                                                    value={wishes}
+                                                                    onChange={(e) => setWishes(e.target.value)}
+                                                                    className="w-full bg-black/20 border border-[#BF953F]/30 rounded-xl p-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#BF953F] h-24 resize-none mb-3"
+                                                                    placeholder="ជូនពរឱ្យ..."
+                                                                />
+                                                                <div className="flex gap-2 justify-end">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setShowWishesInput(false);
+                                                                            if (isEditing) setIsEditing(false);
+                                                                        }}
+                                                                        className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5 transition-colors"
+                                                                    >
+                                                                        ត្រឡប់ក្រោយ
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleRSVP('attending', wishes)}
+                                                                        className="px-6 py-2 rounded-xl text-sm bg-[#BF953F] hover:bg-[#a27e33] text-black font-bold transition-colors shadow-lg shadow-[#BF953F]/20"
+                                                                    >
+                                                                        បញ្ជូនចម្លើយ
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+
+                                                <button
+                                                    onClick={() => {
+                                                        setShowDeclineInput(true);
+                                                        setShowWishesInput(false);
+                                                    }}
+                                                    className={`relative h-14 rounded-2xl transition-all active:scale-95 ${
+                                                        guest?.status === 'declined' 
+                                                        ? 'bg-red-500/80 text-white font-bold shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
+                                                        : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-center gap-3 px-6">
+                                                        <UserX size={20} strokeWidth={3} className={guest?.status === 'declined' ? 'text-white' : 'text-red-400/60'} />
+                                                        <span style={{fontFamily: "Taprom", fontSize: "1rem"}}>មិនអាចចូលរួមបាន</span>
+                                                    </div>
+                                                </button>
+                                                
+                                                <AnimatePresence>
+                                                    {showDeclineInput && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-2">
+                                                                <label className="text-white/80 text-sm mb-2 block font-['Taprom']">សូមបញ្ជាក់មូលហេតុ (មិនបង្ខំ):</label>
+                                                                <textarea
+                                                                    value={declineReason}
+                                                                    onChange={(e) => setDeclineReason(e.target.value)}
+                                                                    className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#BF953F] h-24 resize-none mb-3"
+                                                                    placeholder="មូលហេតុ..."
+                                                                />
+                                                                <div className="flex gap-2 justify-end">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setShowDeclineInput(false);
+                                                                            if (isEditing) setIsEditing(false);
+                                                                        }}
+                                                                        className="px-4 py-2 rounded-xl text-sm text-white/60 hover:bg-white/5 transition-colors"
+                                                                    >
+                                                                        ត្រឡប់ក្រោយ
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleRSVP('declined', declineReason)}
+                                                                        className="px-6 py-2 rounded-xl text-sm bg-red-500 hover:bg-red-600 text-white font-bold transition-colors shadow-lg shadow-red-500/20"
+                                                                    >
+                                                                        បញ្ជូនចម្លើយ
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </>
+                                        )}
                                     </div>
 
-                                    {(guest?.status === 'attending' || guest?.status === 'declined') && (
+                                    {(guest?.status === 'attending' || guest?.status === 'declined') && !isEditing && (
                                         <motion.div 
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
