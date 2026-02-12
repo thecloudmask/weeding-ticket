@@ -62,7 +62,7 @@ const TraditionalCard: React.FC<{ label: string; value: number }> = ({ label, va
     <motion.div 
       initial={{ opacity: 0, scale: 0.8 }}
       whileInView={{ opacity: 1, scale: 1 }}
-      className="flex-1 max-w-[100px]"
+      className="flex-1 max-w-[80px]"
     >
       <div className="relative aspect-[3/4] w-full flex flex-col items-center justify-center rounded-xl overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] border border-[#BF953F]/40 bg-[#1a1103]/80 backdrop-blur-sm">
         

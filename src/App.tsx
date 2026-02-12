@@ -8,6 +8,8 @@ import LoginPage from './pages/Login'
 import GuestPaymentPage from './pages/GuestPaymentPage'
 
 import WeddingFlowPage from './pages/WeddingFlowPage';
+import ProtectedRoute from './components/ProtectedRoute';
+
 function App() {
 
   return (
@@ -15,9 +17,9 @@ function App() {
     <Toaster richColors position="top-right" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/wedding/:id" element={<WeddingFlowPage />} />
-        <Route path="/guest-payment" element={<GuestPaymentPage />} />
+        <Route path="/guest-payment" element={<ProtectedRoute><GuestPaymentPage /></ProtectedRoute>} />
       </Routes>
   </Router>
   )

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   collection,
@@ -15,6 +15,13 @@ import { db, auth } from '../../firebase';
 import type {
   GuestPayment,
 } from '../types/guestPayment';
+
+interface MasterGuest {
+  id: string;
+  fullName: string;
+  title?: string;
+  address?: string;
+}
 import {
   CATEGORIES,
   PAYMENT_METHODS,
@@ -28,8 +35,6 @@ import {
   Pencil,
   DollarSign,
   Users,
-  Filter,
-  X,
   Banknote,
   // Wallet,
   Search,
@@ -37,10 +42,18 @@ import {
   LayoutDashboard,
   CheckCircle2,
   Trophy,
-  History,
-  MapPin
+  Send,
+
+  TrendingUp,
+  PieChart,
+  MapPin,
+  RefreshCw,
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
 import {
   Drawer,
   DrawerContent,
@@ -48,6 +61,14 @@ import {
   DrawerTitle,
   DrawerFooter,
 } from '../components/ui/drawer';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem
+} from "@/components/ui/dropdown-menu";
+
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -58,11 +79,18 @@ export default function GuestPaymentPage() {
   const navigate = useNavigate();
   const [guests, setGuests] = useState<GuestPayment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('All');
   const [filterCurrency, setFilterCurrency] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [masterGuests, setMasterGuests] = useState<MasterGuest[]>([]);
+  const [suggestions, setSuggestions] = useState<MasterGuest[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -74,16 +102,29 @@ export default function GuestPaymentPage() {
     amount: '',
     note: '',
   });
+  const [paymentMethodOptions, setPaymentMethodOptions] = useState<string[]>([...PAYMENT_METHODS]);
+  const [isCustomPaymentMethod, setIsCustomPaymentMethod] = useState(false);
+  const [customPaymentMethod, setCustomPaymentMethod] = useState("");
+
+  const getPaymentMethodStyles = (method: string) => {
+    switch (method) {
+      case 'Cash': return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' };
+      case 'ABA Bank': return { bg: 'bg-cyan-50 text-cyan-700 border-cyan-200', dot: 'bg-cyan-500' };
+      case 'ACLEDA Bank': return { bg: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-600' };
+      case 'Wing': return { bg: 'bg-yellow-50 text-yellow-700 border-yellow-200', dot: 'bg-yellow-500' };
+      default: return { bg: 'bg-slate-50 text-slate-600 border-slate-200', dot: 'bg-slate-400' };
+    }
+  };
 
   const handleLogout = async () => {
     try {
-      if (confirm("Are you sure you want to logout?")) {
+      if (confirm("តើអ្នកពិតជាចង់ចាកចេញមែនទេ?")) {
         await signOut(auth);
-        toast.success("✅ Logged out successfully!");
+        toast.success("✅ ចាកចេញបានជោគជ័យ!");
       }
     } catch (err) {
       console.error("Error logging out:", err);
-      toast.error("❌ Failed to log out");
+      toast.error("❌ មិនអាចចាកចេញបានទេ។");
     }
   };
 
@@ -91,8 +132,23 @@ export default function GuestPaymentPage() {
   useEffect(() => {
     if (user) {
       fetchGuests();
+      fetchMasterGuests();
     }
   }, [user]);
+
+  const fetchMasterGuests = async () => {
+    try {
+      const q = query(collection(db, 'guests'), orderBy('fullName', 'asc'));
+      const querySnapshot = await getDocs(q);
+      const guestData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as MasterGuest[];
+      setMasterGuests(guestData);
+    } catch (error) {
+      console.error('Error fetching master guests:', error);
+    }
+  };
 
   if (authLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white text-xl">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
@@ -110,7 +166,7 @@ export default function GuestPaymentPage() {
       setGuests(guestsData);
     } catch (error) {
     //   console.error('Error fetching guests:', error);
-      toast.error('Failed to load guests');
+      toast.error('មិនអាចទាញយកបញ្ជីភ្ញៀវបានទេ។');
     } finally {
       setLoading(false);
     }
@@ -120,16 +176,23 @@ export default function GuestPaymentPage() {
     e.preventDefault();
     
     if (!formData.name || !formData.amount) {
-      toast.error('Please fill in required fields');
+      toast.error('សូមបំពេញព័ត៌មានដែលចាំបាច់');
       return;
     }
 
+    // Handle custom payment method
+    let finalPaymentMethod = formData.paymentMethod;
+    if (isCustomPaymentMethod && customPaymentMethod.trim()) {
+        finalPaymentMethod = customPaymentMethod.trim() as any;
+    }
+
     try {
+      setIsSubmitting(true);
       const guestData = {
         name: formData.name,
         location: formData.location || null,
         category: formData.category,
-        paymentMethod: formData.paymentMethod,
+        paymentMethod: finalPaymentMethod,
         currency: formData.currency,
         amount: parseFloat(formData.amount),
         note: formData.note || null,
@@ -138,8 +201,8 @@ export default function GuestPaymentPage() {
 
       if (editingGuestId) {
         await updateDoc(doc(db, 'guestPayments', editingGuestId), guestData);
-        toast.success(`Updated: ${guestData.name}`, {
-          description: `Amount: ${guestData.currency === 'USD' ? '$' : '៛'}${guestData.amount.toLocaleString()}`,
+        toast.success(`ធ្វើបច្ចុប្បន្នភាពរួចរាល់៖ ${guestData.name}`, {
+          description: `ចំនួនទឹកប្រាក់៖ ${guestData.currency === 'USD' ? '$' : '៛'}${guestData.amount.toLocaleString()}`,
           icon: <CheckCircle2 className="text-blue-500" size={20} />,
         });
         setShowAddModal(false);
@@ -148,18 +211,22 @@ export default function GuestPaymentPage() {
           ...guestData,
           createdAt: Timestamp.now(),
         });
-        toast.success(`Added: ${guestData.name}`, {
-          description: `Received ${guestData.currency === 'USD' ? '$' : '៛'}${guestData.amount.toLocaleString()} via ${guestData.paymentMethod}`,
-          duration: 5000,
+        toast.success(`បន្ថែមជោគជ័យ៖ ${guestData.name}`, {
+          description: `ចំនួនទឹកប្រាក់៖ ${guestData.currency === 'USD' ? '$' : '៛'}${guestData.amount.toLocaleString()}`,
           icon: <CheckCircle2 className="text-green-500" size={20} />,
         });
       }
-
       resetForm();
       fetchGuests();
+      // Auto focus back to name input
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
     } catch (error) {
-      console.error('Error saving guest:', error);
-      toast.error(editingGuestId ? 'Failed to update guest' : 'Failed to add guest');
+      console.error('Error adding/updating guest:', error);
+      toast.error('មានបញ្ហាជាមួយទិន្នន័យ។');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -173,20 +240,31 @@ export default function GuestPaymentPage() {
       amount: guest.amount.toString(),
       note: guest.note || '',
     });
+    // Check if the payment method is custom
+    if (!PAYMENT_METHODS.includes(guest.paymentMethod)) {
+      setIsCustomPaymentMethod(true);
+      setCustomPaymentMethod(guest.paymentMethod);
+    } else {
+      setIsCustomPaymentMethod(false);
+      setCustomPaymentMethod("");
+    }
     setEditingGuestId(guest.id);
     setShowAddModal(true);
   };
 
   const handleDeleteGuest = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this guest?')) return;
+    if (!confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?')) return;
 
     try {
+      setDeletingId(id);
       await deleteDoc(doc(db, 'guestPayments', id));
-      toast.success('Guest deleted successfully');
+      toast.success('លុបទិន្នន័យបានជោគជ័យ');
       fetchGuests();
     } catch (error) {
       console.error('Error deleting guest:', error);
-      toast.error('Failed to delete guest');
+      toast.error('មិនអាចលុបទិន្នន័យបានទេ។');
+    } finally {
+      setDeletingId(null); // Reset deletingId after deletion attempt
     }
   };
 
@@ -201,6 +279,46 @@ export default function GuestPaymentPage() {
       note: '',
     });
     setEditingGuestId(null);
+    setIsCustomPaymentMethod(false);
+    setCustomPaymentMethod("");
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleSendThanks = (guest: GuestPayment) => {
+    const amountStr = `${guest.currency === 'USD' ? '$' : '៛'}${guest.amount.toLocaleString()}`;
+    const message = `សូមអរគុណលោក ${guest.name} ដែលបានចូលរួមកម្មវិធីមង្គលការ និងផ្តល់កិត្តិយសជាចំណងដៃចំនួន ${amountStr}។ សូមជូនពរសុខភាពល្អ សំណាងល្អ និងជោគជ័យគ្រប់ភារកិច្ច! 🙏✨`;
+    const encodedMsg = encodeURIComponent(message);
+    window.open(`https://t.me/share/url?url=${encodedMsg}`, '_blank');
+  };
+
+  const handleNameChange = (val: string) => {
+    setFormData({ ...formData, name: val });
+    
+    if (val.trim().length > 0) {
+      const filtered = masterGuests.filter(g => 
+        g.fullName.toLowerCase().includes(val.toLowerCase())
+      ).slice(0, 5);
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectGuest = (guest: MasterGuest) => {
+    setFormData({
+      ...formData,
+      name: guest.fullName,
+      location: guest.address || formData.location,
+    });
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   // Calculate totals
@@ -221,303 +339,313 @@ export default function GuestPaymentPage() {
     .filter((g) => g.currency === 'KHR')
     .reduce((sum, g) => sum + g.amount, 0);
 
+  const avgUSD = filteredGuests.filter(g => g.currency === 'USD').length > 0 
+    ? totalUSD / filteredGuests.filter(g => g.currency === 'USD').length 
+    : 0;
+    
+  const avgKHR = filteredGuests.filter(g => g.currency === 'KHR').length > 0 
+    ? totalKHR / filteredGuests.filter(g => g.currency === 'KHR').length 
+    : 0;
+
+  // Find top category
+  const categoryTotals = filteredGuests.reduce((acc, guest) => {
+    const val = guest.currency === 'USD' ? guest.amount : convertToUSD(guest.amount, 'KHR');
+    acc[guest.category] = (acc[guest.category] || 0) + val;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+  const dateStr = new Date().toLocaleDateString('km-KH', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
   const grandTotalUSD = totalUSD + convertToUSD(totalKHR, 'KHR');
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] p-4 md:p-8 relative overflow-hidden">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-500/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-200/20 blur-[120px] rounded-full" />
-      </div>
-
-      <style>{`
-        .golden-metallic-text {
-          background: linear-gradient(to bottom, #BF953F 0%, #8A6E2F 22%, #BF953F 50%, #8A6E2F 78%, #BF953F 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
-        }
-        .premium-border {
-          border: 1px solid rgba(191, 149, 63, 0.2);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-        .light-premium-card {
-          background: rgba(255, 255, 255, 0.8);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(191, 149, 63, 0.15);
-        }
-      `}</style>
-
-      <div className="max-w-7xl mx-auto relative z-10">
+    <div className="min-h-screen bg-slate-50/50 p-2 md:p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6"
-        >
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-primary/10 pb-5">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-2 golden-metallic-text" style={{ fontFamily: 'Taprom' }}>
-              បតីទាន - Guest Payment Tracker
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+              បញ្ជីចំណងដៃ
             </h1>
-            <p className="text-amber-800/60 font-medium tracking-wide uppercase text-[10px]">Royal Wedding Collection Portfolio</p>
+            <p className="text-slate-500 text-sm mt-1 font-medium italic">កត់ត្រា និងគ្រប់គ្រងថវិកាចំណងដៃសម្រាប់មង្គលការ</p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               onClick={() => navigate('/')}
               variant="outline"
-              className="bg-white/80 border-amber-200 text-amber-900 hover:bg-amber-50 hover:text-amber-700 backdrop-blur-md rounded-xl transition-all shadow-sm"
+              className="h-12 px-6 border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-2.5 font-bold text-base transition-all rounded-xl shadow-sm cursor-pointer"
             >
-              <LayoutDashboard className="mr-2" size={18} />
-              Guest Management
+              <LayoutDashboard size={20} className="text-primary" />
+              ផ្ទាំងគ្រប់គ្រង
+            </Button>
+            
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="h-12 px-6 border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-2.5 font-bold text-base transition-all rounded-xl shadow-sm cursor-pointer"
+            >
+              <Printer size={20} className="text-secondary" />
+              បោះពុម្ពរបាយការណ៍
             </Button>
             
             <Button
               onClick={handleLogout}
-              variant="destructive"
-              className="bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700 backdrop-blur-md rounded-xl shadow-sm transition-all"
+              variant="outline"
+              className="h-12 px-6 border-slate-200 text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100 flex items-center gap-2.5 font-bold text-base transition-all rounded-xl shadow-sm cursor-pointer"
             >
-              <LogOut className="mr-2" size={18} />
-              Logout
+              <LogOut size={20} />
+              ចាកចេញ
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-3xl rounded-full" />
-            <div className="flex items-center justify-between relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          {/* Total Guests Card */}
+          <div className="relative overflow-hidden bg-white rounded-2xl p-8 min-h-[140px] border border-primary/10 shadow-sm transition-all hover:shadow-md group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-amber-800/40 text-[10px] font-bold uppercase tracking-widest mb-1">Total Guests</p>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">ភ្ញៀវសរុប</p>
                 <div className="flex items-baseline gap-2">
-                  <h3 className="text-3xl font-bold text-slate-800">{filteredGuests.length}</h3>
-                  <span className="text-[10px] text-amber-800/40 font-medium tracking-tighter uppercase">Recorded</span>
+                  <span className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">{filteredGuests.length}</span>
+                  <span className="text-slate-400 text-sm font-semibold">នាក់</span>
                 </div>
               </div>
-              <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
-                <Users className="w-8 h-8 text-amber-600" />
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
+                <Users className="w-7 h-7 text-primary" />
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-3xl rounded-full" />
-            <div className="flex items-center justify-between relative z-10">
+          {/* USD Total Card */}
+          <div className="relative overflow-hidden bg-white rounded-2xl p-8 min-h-[140px] border border-secondary/10 shadow-sm transition-all hover:shadow-md group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-amber-800/40 text-[10px] font-bold uppercase tracking-widest mb-1">Total USD</p>
-                <h3 className="text-3xl font-bold text-slate-800">
-                  <span className="text-amber-600 text-xl font-medium mr-1">$</span>
-                  {totalUSD.toLocaleString()}
-                </h3>
+                <p className="text-slate-400 text-sm font-black uppercase tracking-widest mb-2">សរុបដុល្លារ</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-secondary text-base font-black">$</span>
+                  <span className="text-3xl md:text-2xl font-black text-slate-900 tracking-tight">{totalUSD.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                <DollarSign className="w-8 h-8 text-emerald-600" />
+              <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center shadow-inner">
+                <DollarSign className="w-7 h-7 text-secondary" />
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full" />
-            <div className="flex items-center justify-between relative z-10">
+          {/* KHR Total Card */}
+          <div className="relative overflow-hidden bg-white rounded-2xl p-8 min-h-[140px] border border-amber-50 shadow-sm transition-all hover:shadow-md group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-amber-800/40 text-[10px] font-bold uppercase tracking-widest mb-1">Total KHR</p>
-                <h3 className="text-3xl font-bold text-slate-800">
-                  <span className="text-amber-600 text-xl font-medium mr-1">៛</span>
-                  {totalKHR.toLocaleString()}
-                </h3>
+                <p className="text-slate-400 text-sm font-black uppercase tracking-widest mb-2">សរុបប្រាក់រៀល</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-amber-600 text-base font-black">៛</span>
+                  <span className="text-2xl md:text-2xl font-black text-slate-900 tracking-tight">{totalKHR.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                <Banknote className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center shadow-inner">
+                <Banknote className="w-7 h-7 text-emerald-600" />
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl p-6 relative overflow-hidden border-2 border-amber-200 group shadow-[0_10px_30px_rgba(191,149,63,0.1)] hover:translate-y-[-4px] transition-all"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
-            <div className="flex items-center justify-between relative z-10">
+          {/* Average Card */}
+          <div className="relative overflow-hidden bg-white rounded-2xl p-8 min-h-[140px] border border-blue-50 shadow-sm transition-all hover:shadow-md group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-amber-700 text-[10px] font-black uppercase tracking-widest mb-1">Grand Total</p>
-                <h3 className="text-3xl font-bold text-amber-900 group-hover:scale-105 transition-all">
-                  <span className="text-xl font-medium mr-1">$</span>
-                  {grandTotalUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </h3>
+                <p className="text-slate-400 text-sm font-black uppercase tracking-widest mb-2">មធ្យមភាគចំណងដៃ</p>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-secondary text-xs font-bold">$</span>
+                    <span className="text-xl font-black text-slate-900 tracking-tight">{avgUSD.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-amber-600 text-xs font-bold">៛</span>
+                    <span className="text-xl font-black text-slate-900 tracking-tight">{avgKHR.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-amber-100 p-3 rounded-xl border border-amber-200">
-                <Trophy className="w-8 h-8 text-amber-600" />
+              <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center shadow-inner">
+                <TrendingUp className="w-7 h-7 text-blue-600" />
               </div>
             </div>
-          </motion.div>
+          </div>
+
+          {/* Top Category Card */}
+          <div className="relative overflow-hidden bg-white rounded-2xl p-8 min-h-[140px] border border-purple-50 shadow-sm transition-all hover:shadow-md group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className="relative flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm font-black uppercase tracking-widest mb-2">សកម្មបំផុត</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-slate-900 tracking-tight">{topCategory}</span>
+                </div>
+              </div>
+              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center shadow-inner">
+                <PieChart className="w-7 h-7 text-purple-600" />
+              </div>
+            </div>
+          </div>
+          {/* Grand Total Card */}
+          <div className="relative overflow-hidden bg-primary rounded-2xl p-8 min-h-[140px] shadow-lg shadow-primary/20 transition-all hover:shadow-xl group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+            <div className="relative flex items-center justify-between text-white">
+              <div>
+                <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">សរុបរួម (USD)</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-white/80 text-base font-bold">$</span>
+                  <span className="text-4xl font-black text-white tracking-tight">
+                    {grandTotalUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
+                <Trophy className="w-7 h-7 text-white" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Filters and Actions */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white/60 premium-border backdrop-blur-md rounded-2xl p-6 mb-8"
-        >
-          {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-800/30" size={20} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search collection ledger..."
-                className="w-full bg-white text-slate-800 rounded-xl pl-12 pr-4 py-4 border border-amber-100 placeholder-amber-800/20 focus:outline-none focus:ring-2 focus:ring-amber-200 transition-all shadow-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-800/30 hover:text-amber-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              )}
-            </div>
+        <div className="mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between bg-white p-5 rounded-2xl border border-primary/10 shadow-sm">
+          <div className="relative flex-1 w-full lg:max-w-xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ស្វែងរកតាមឈ្មោះ ឬអាសយដ្ឋាន..."
+              className="w-full h-12 bg-slate-50/50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-none placeholder:text-slate-400"
+            />
           </div>
 
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2 bg-amber-50/50 px-4 py-2 rounded-lg border border-amber-100">
-                <Filter size={16} className="text-amber-600/60" />
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="bg-transparent text-amber-900 text-sm font-medium focus:outline-none cursor-pointer"
-                >
-                  <option value="All">All Categories</option>
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className="flex flex-wrap gap-4 w-full lg:w-auto items-center justify-end">
+            <div className="flex gap-4">
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="bg-white text-slate-700 text-sm font-bold px-5 h-12 rounded-xl border border-slate-200 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer shadow-none"
+              >
+                <option value="All">គ្រប់ប្រភេទ</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
 
-              <div className="flex items-center gap-2 bg-amber-50/50 px-4 py-2 rounded-lg border border-amber-100">
-                <History size={16} className="text-amber-600/60" />
-                <select
-                  value={filterCurrency}
-                  onChange={(e) => setFilterCurrency(e.target.value)}
-                  className="bg-transparent text-amber-900 text-sm font-medium focus:outline-none cursor-pointer"
-                >
-                  <option value="All">All Currencies</option>
-                  {CURRENCIES.map((curr) => (
-                    <option key={curr} value={curr}>
-                      {curr}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={filterCurrency}
+                onChange={(e) => setFilterCurrency(e.target.value)}
+                className="bg-white text-slate-700 text-sm font-bold px-5 h-12 rounded-xl border border-slate-200 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer shadow-none"
+              >
+                <option value="All">គ្រប់រង្វង់ប្រាក់</option>
+                {CURRENCIES.map((curr) => (
+                  <option key={curr} value={curr}>{curr}</option>
+                ))}
+              </select>
             </div>
 
             <Button
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-[#BF953F] to-[#FCF6BA] hover:from-[#8A6E2F] hover:to-[#BF953F] text-amber-900 font-bold px-8 h-12 rounded-xl shadow-[0_4px_15px_rgba(191,149,63,0.15)] transition-all active:scale-95"
+              onClick={() => {
+                resetForm();
+                setShowAddModal(true);
+              }}
+              className="bg-primary hover:bg-primary/90 text-white font-bold h-12 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 text-sm whitespace-nowrap cursor-pointer"
             >
-              <Plus className="mr-2" size={20} />
-              Add Collection Record
+              <Plus className="mr-2.5" size={20} />
+              បន្ថែមការកត់ត្រា
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Guest List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <div className="w-12 h-12 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin" />
-            <p className="text-amber-700 font-medium tracking-widest text-xs uppercase animate-pulse">Consulting Ledger...</p>
+            <p className="text-amber-700 font-medium tracking-widest text-xs uppercase animate-pulse">កំពុងទាញយកទិន្នន័យ...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence mode="popLayout">
-              {filteredGuests.map((guest, index) => (
-                <motion.div
+              {filteredGuests.map((guest) => (
+                <div
                   key={guest.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-b-4 border-b-amber-500/20"
+                  className="bg-white rounded-2xl p-8 min-h-[260px] border border-primary/10 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between group"
                 >
-                  <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-                  
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1.5">
-                        <span className="text-[10px] font-black bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">
-                          #{filteredGuests.length - index}
-                        </span>
-                        <h3 className="text-xl font-bold text-slate-800 group-hover:text-amber-700 transition-colors" style={{ fontFamily: 'Taprom' }}>{guest.name}</h3>
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-black text-slate-900 leading-tight mb-2 group-hover:text-primary transition-colors">{guest.name}</h3>
+                        {guest.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin size={14} className="text-primary/60" />
+                            <span className="text-slate-500 text-sm font-medium">{guest.location}</span>
+                          </div>
+                        )}
                       </div>
-                      {guest.location && (
-                        <p className="text-amber-700/50 text-[10px] font-bold uppercase tracking-widest ml-10 flex items-center gap-1.5">
-                          <MapPin size={12} /> {guest.location}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex gap-2.5">
+                      <button
+                        onClick={() => handleSendThanks(guest)}
+                        title="ផ្ញើសារអរគុណ"
+                        className="p-3 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all active:scale-90 cursor-pointer border border-emerald-100 shadow-sm"
+                      >
+                        <Send size={18} />
+                      </button>
                       <button
                         onClick={() => handleEditClick(guest)}
-                        className="p-2 text-amber-700/30 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                        className="p-2.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all active:scale-90 cursor-pointer"
                       >
-                        <Pencil size={16} />
+                        <Pencil size={18} />
                       </button>
                       <button
                         onClick={() => handleDeleteGuest(guest.id)}
-                        className="p-2 text-red-500/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        disabled={deletingId === guest.id}
+                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90 cursor-pointer disabled:opacity-50"
                       >
-                        <Trash2 size={16} />
+                        {deletingId === guest.id ? (
+                          <RefreshCw size={18} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={18} />
+                        )}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg inline-block mb-5">
-                    {guest.category}
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-black text-amber-900/20">
-                      <span>Via {guest.paymentMethod}</span>
-                      <History size={12} className="opacity-30" />
                     </div>
-                    <div className="flex justify-between items-center bg-[#FDFBF7] p-3 rounded-xl border border-amber-100/50">
-                      <span className="text-amber-800/30 text-[9px] font-black uppercase tracking-[0.1em]">Amount Received</span>
-                      <span className="text-2xl font-bold text-slate-800">
-                        <span className="text-amber-600 text-base font-medium mr-1.5">{guest.currency === 'USD' ? '$' : '៛'}</span>
+
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-lg bg-primary/5 border border-primary/10 text-primary text-xs font-black uppercase tracking-wider mb-6">
+                      {guest.category}
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${getPaymentMethodStyles(guest.paymentMethod).bg}`}>
+                      <div className={`w-2 h-2 rounded-full ${getPaymentMethodStyles(guest.paymentMethod).dot}`} />
+                      <span className="text-xs font-bold uppercase tracking-widest">{guest.paymentMethod}</span>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-primary text-base font-black">{guest.currency === 'USD' ? '$' : '៛'}</span>
+                      <span className="text-4xl font-black text-slate-900 tracking-tight">
                         {guest.amount.toLocaleString()}
                       </span>
                     </div>
-                    {guest.note && (
-                      <div className="bg-amber-50/30 border-l-2 border-amber-200 p-2.5 rounded-r-lg">
-                        <p className="text-amber-800/60 text-[11px] italic leading-relaxed font-medium">“{guest.note}”</p>
-                      </div>
-                    )}
                   </div>
-                </motion.div>
+
+                  {guest.note && (
+                    <div className="mt-6 p-4 bg-slate-50/80 rounded-xl border border-slate-100/50 animate-in fade-in slide-in-from-bottom-2">
+                      <p className="text-slate-500 text-base leading-relaxed italic line-clamp-2">
+                        "{guest.note}"
+                      </p>
+                    </div>
+                  )}</div>
               ))}
             </AnimatePresence>
           </div>
@@ -530,53 +658,85 @@ export default function GuestPaymentPage() {
             className="text-center py-16"
           >
             <Users className="w-24 h-24 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-300 text-xl">No guests found</p>
-            <p className="text-gray-400 mt-2">Add your first guest to get started!</p>
+            <p className="text-gray-300 text-xl">រកមិនឃើញភ្ញៀវ</p>
+            <p className="text-gray-400 mt-2">សូមបន្ថែមភ្ញៀវដំបូងរបស់អ្នកដើម្បីចាប់ផ្តើម!</p>
           </motion.div>
         )}
       </div>
 
       {/* Add Guest Drawer */}
-      <Drawer open={showAddModal} onOpenChange={setShowAddModal}>
-        <DrawerContent className="bg-slate-900 border-white/10 text-white max-w-2xl mx-auto">
-          <DrawerHeader className="border-b border-white/5 pb-4">
-            <DrawerTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              {editingGuestId ? 'Edit Guest' : 'Add New Guest'}
+      <Drawer open={showAddModal} onOpenChange={(open) => {
+        setShowAddModal(open);
+        if (!open) resetForm();
+      }}>
+        <DrawerContent className="bg-white max-w-2xl mx-auto rounded-t-2xl border-t border-slate-100">
+          <DrawerHeader className="border-b border-slate-100 pb-4">
+            <DrawerTitle className="text-lg font-bold text-slate-900">
+              {editingGuestId ? 'កែសម្រួលការកត់ត្រា' : 'បន្ថែមការកត់ត្រាថ្មី'}
             </DrawerTitle>
           </DrawerHeader>
 
           <div className="p-6 overflow-y-auto max-h-[80vh]">
-            <form id="guest-form" onSubmit={handleAddGuest} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Name *</label>
-                  <input
+            <form id="guest-form" onSubmit={handleAddGuest} className="space-y-4 text-slate-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2.5 relative">
+                  <Label className="text-base font-bold text-slate-700 ml-1">ឈ្មោះអ្នកចូលរួម *</Label>
+                  <Input
+                    ref={nameInputRef}
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-                    placeholder="Guest name"
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onFocus={() => formData.name && handleNameChange(formData.name)}
+                    className="h-12 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 text-base focus:border-primary transition-all shadow-none rounded-xl"
+                    placeholder="វាយឈ្មោះភ្ញៀវ..."
                     required
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAddGuest(e); }}
                   />
+                  
+                  {showSuggestions && suggestions.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 overflow-hidden"
+                    >
+                      {suggestions.map((guest) => (
+                        <button
+                          key={guest.id}
+                          type="button"
+                          onClick={() => selectGuest(guest)}
+                          className="w-full text-left px-4 py-3 hover:bg-primary/5 transition-colors border-b border-slate-50 last:border-0"
+                        >
+                          <div className="font-bold text-slate-900">{guest.fullName}</div>
+                          {guest.address && (
+                            <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                              <MapPin size={10} /> {guest.address}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Location</label>
-                  <input
+                <div className="space-y-2.5">
+                  <Label className="text-base font-bold text-slate-700 ml-1">អាសយដ្ឋាន/ទីកន្លែង</Label>
+                  <Input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-                    placeholder="Location (optional)"
+                    className="h-12 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 text-base focus:border-primary transition-all shadow-none rounded-xl"
+                    placeholder="ឧទាហរណ៍៖ រាជធានីភ្នំពេញ"
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAddGuest(e); }}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Category *</label>
+                <div className="space-y-2.5">
+                  <Label className="text-base font-bold text-slate-700 ml-1">ត្រូវជា? *</Label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all [&>option]:bg-slate-900"
+                    className="w-full h-12 bg-white border border-slate-300 rounded-xl px-4 text-base text-slate-900 focus:outline-none focus:border-primary transition-all cursor-pointer"
                     required
                   >
                     {CATEGORIES.map((cat) => (
@@ -585,26 +745,51 @@ export default function GuestPaymentPage() {
                   </select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Payment Method *</label>
-                  <select
-                    value={formData.paymentMethod}
-                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all [&>option]:bg-slate-900"
-                    required
-                  >
-                    {PAYMENT_METHODS.map((method) => (
-                      <option key={method} value={method}>{method}</option>
-                    ))}
-                  </select>
+                <div className="space-y-2.5">
+                  <Label className="text-base font-bold text-slate-700 ml-1">
+                      {isCustomPaymentMethod ? "មធ្យោបាយបង់ប្រាក់ថ្មី" : "មធ្យោបាយបង់ប្រាក់ *"}
+                  </Label>
+                  {isCustomPaymentMethod ? (
+                      <div className="animate-in fade-in slide-in-from-top-1">
+                          <Input 
+                              value={customPaymentMethod}
+                              onChange={(e) => setCustomPaymentMethod(e.target.value)}
+                              placeholder="បញ្ចូលមធ្យោបាយបង់ប្រាក់..."
+                              className="h-12 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 text-base focus:border-primary transition-all shadow-none rounded-xl"
+                          />
+                      </div>
+                  ) : (
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button type="button" variant="outline" className="w-full justify-between flex items-center gap-2 h-12 px-4 bg-white border-slate-300 hover:bg-slate-50 transition-colors text-base font-normal text-slate-900 shadow-none cursor-pointer rounded-xl">
+                                  <span className="truncate">{formData.paymentMethod}</span>
+                                  <ChevronDown className="w-5 h-5 text-slate-400" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[300px] overflow-y-auto bg-white border-slate-200 text-slate-700">
+                              <DropdownMenuRadioGroup value={formData.paymentMethod} onValueChange={(val) => setFormData({...formData, paymentMethod: val as any})}>
+                                  {paymentMethodOptions.map((method) => (
+                                      <DropdownMenuRadioItem key={method} value={method} className="py-2.5 text-sm hover:bg-slate-50 focus:bg-slate-50 cursor-pointer">
+                                          {method}
+                                      </DropdownMenuRadioItem>
+                                  ))}
+                                  <DropdownMenuRadioItem value="custom" className="py-2.5 text-primary font-bold border-t border-slate-100 text-sm hover:bg-slate-50 focus:bg-slate-50 cursor-pointer" 
+                                      onClick={() => setIsCustomPaymentMethod(true)}>
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      បន្ថែមថ្មី...
+                                  </DropdownMenuRadioItem>
+                              </DropdownMenuRadioGroup>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Currency *</label>
+                <div className="space-y-2.5">
+                  <Label className="text-base font-bold text-slate-700 ml-1">រូបិយប័ណ្ណ *</Label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value as any })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all [&>option]:bg-slate-900"
+                    className="w-full h-12 bg-white border border-slate-300 rounded-xl px-4 text-base text-slate-900 focus:outline-none focus:border-primary transition-all cursor-pointer"
                     required
                   >
                     {CURRENCIES.map((curr) => (
@@ -613,58 +798,199 @@ export default function GuestPaymentPage() {
                   </select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Amount *</label>
+                <div className="space-y-2.5">
+                  <Label className="text-base font-bold text-slate-700 ml-1">ចំនួនទឹកប្រាក់ *</Label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-black text-base">
                       {formData.currency === 'USD' ? '$' : '៛'}
                     </span>
-                    <input
+                    <Input
                       type="number"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                      className="h-12 pl-10 pr-5 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 text-lg font-black focus:border-primary transition-all shadow-none rounded-xl"
                       placeholder="0.00"
                       required
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAddGuest(e); }}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Note</label>
+              <div className="space-y-2.5 pt-2">
+                <Label className="text-base font-bold text-slate-700 ml-1">កំណត់ចំណាំ</Label>
                 <textarea
                   value={formData.note}
                   onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
-                  placeholder="Additional notes..."
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-base text-slate-900 focus:outline-none focus:border-primary transition-all resize-none shadow-none min-h-[100px]"
+                  placeholder="បន្ថែមចំណាំផ្សេងៗ..."
                   rows={3}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) handleAddGuest(e); }}
                 />
               </div>
             </form>
           </div>
 
-          <DrawerFooter className="border-t border-white/5 p-6 flex-row gap-4">
+          <DrawerFooter className="border-t border-slate-50 p-6 flex-row gap-3">
             <Button
               variant="outline"
               onClick={() => {
                 setShowAddModal(false);
                 resetForm();
               }}
-              className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 h-12 rounded-xl"
+              className="flex-1 h-11 rounded-xl border-slate-200 text-slate-400 hover:bg-slate-50 font-bold text-xs uppercase tracking-widest shadow-none cursor-pointer"
             >
-              Cancel
+              បោះបង់
             </Button>
             <Button
               type="submit"
               form="guest-form"
-              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 rounded-xl shadow-lg shadow-purple-500/20"
+              disabled={isSubmitting}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white h-11 rounded-xl shadow-lg shadow-primary/20 font-bold text-xs uppercase tracking-widest transition-all active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {editingGuestId ? 'Update Guest' : 'Add Guest'}
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {editingGuestId ? 'កំពុងធ្វើបច្ចុប្បន្នភាព...' : 'កំពុងរក្សាទុក...'}
+                </div>
+              ) : (
+                editingGuestId ? 'ធ្វើបច្ចុប្បន្នភាព' : 'រក្សាទុកទិន្នន័យ'
+              )}
             </Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+            background: white !important;
+          }
+          .print-section, .print-section * {
+            visibility: visible;
+          }
+          .print-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .print-no { visibility: hidden !important; display: none !important; }
+          
+          /* Report Styling */
+          .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+          }
+          .report-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #000;
+            margin-bottom: 5px;
+          }
+          .report-date {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+          }
+          .summary-table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+          }
+          .summary-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+          }
+          .summary-label {
+            font-weight: bold;
+            background: #f9f9f9;
+            width: 30%;
+          }
+          .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .payment-table th {
+            background: #eee;
+            padding: 12px 8px;
+            border: 1px solid #000;
+            font-weight: 900;
+            text-align: left;
+            font-size: 12px;
+          }
+          .payment-table td {
+            padding: 10px 8px;
+            border: 1px solid #000;
+            font-size: 12px;
+          }
+        }
+      `}</style>
+
+      {/* Hidden Print Content */}
+      <div className="hidden print-section">
+        <div className="report-header">
+          <div className="report-title">របាយការណ៍កត់ត្រាចំណងដៃ</div>
+          <div className="report-date">កាលបរិច្ឆេទ៖ {dateStr}</div>
+        </div>
+
+        <table className="summary-table">
+            <tbody>
+                <tr>
+                    <td className="summary-label">ចំនួនភ្ញៀវសរុប</td>
+                    <td>{filteredGuests.length} នាក់</td>
+                </tr>
+                <tr>
+                    <td className="summary-label">សរុបដុល្លារ</td>
+                    <td style={{ fontWeight: 'bold', color: '#000' }}>$ {totalUSD.toLocaleString()}</td>
+                </tr>
+                <tr>
+                    <td className="summary-label">សរុបប្រាក់រៀល</td>
+                    <td style={{ fontWeight: 'bold', color: '#000' }}>៛ {totalKHR.toLocaleString()}</td>
+                </tr>
+                <tr>
+                    <td className="summary-label">សរុបជាដុល្លារ (រួមបញ្ចូល)</td>
+                    <td style={{ fontSize: '18px', fontWeight: '900', color: '#2563eb' }}>$ {grandTotalUSD.toLocaleString()}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table className="payment-table">
+          <thead>
+            <tr>
+              <th style={{ width: '5%' }}>ល.រ</th>
+              <th style={{ width: '25%' }}>ឈ្មោះភ្ញៀវ</th>
+              <th style={{ width: '20%' }}>អាសយដ្ឋាន/ទំនាក់ទំនង</th>
+              <th style={{ width: '15%' }}>ទឹកប្រាក់</th>
+              <th style={{ width: '15%' }}>ប្រភេទ</th>
+              <th style={{ width: '20%' }}>សម្គាល់</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredGuests.map((guest, idx) => (
+              <tr key={guest.id}>
+                <td>{idx + 1}</td>
+                <td style={{ fontWeight: 'bold' }}>{guest.name}</td>
+                <td>{guest.location || '-'}</td>
+                <td style={{ fontWeight: 'bold' }}>
+                  {guest.currency === 'USD' ? '$' : '៛'} {guest.amount.toLocaleString()}
+                </td>
+                <td>{guest.category}</td>
+                <td>{guest.note || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        <div style={{ marginTop: '40px', textAlign: 'right', fontSize: '12px' }}>
+          <p>បោះពុម្ពដោយស្វ័យប្រវត្តិពីប្រព័ន្ធគ្របគ្រងមង្គលការ</p>
+        </div>
+      </div>
     </div>
   );
 }

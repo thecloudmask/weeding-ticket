@@ -13,15 +13,22 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/");
     } catch (error) {
-      alert("Login failed");
+      console.error(error);
+      alert("បរាជ័យក្នុងការចូលប្រើប្រាស់។ សូមពិនិត្យអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នកម្តងទៀត។");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -79,7 +86,18 @@ export default function Login() {
               </button>
             </div>
           </div>
-          <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg shadow-md transition-all">Login</Button>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold h-11 rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                កំពុងចូល...
+              </div>
+            ) : "ចូលប្រើប្រាស់"}
+          </Button>
         </form>
       </div>
       {/* Floating SVG Animations */}
