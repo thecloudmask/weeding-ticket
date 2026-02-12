@@ -20,7 +20,7 @@ import {
   PAYMENT_METHODS,
   CURRENCIES,
   convertToUSD,
-  getCategoryColor
+  // getCategoryColor
 } from '../types/guestPayment';
 import {
   Plus,
@@ -31,11 +31,14 @@ import {
   Filter,
   X,
   Banknote,
-  Wallet,
+  // Wallet,
   Search,
   LogOut,
   LayoutDashboard,
-  CheckCircle2
+  CheckCircle2,
+  Trophy,
+  History,
+  MapPin
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import {
@@ -221,55 +224,86 @@ export default function GuestPaymentPage() {
   const grandTotalUSD = totalUSD + convertToUSD(totalKHR, 'KHR');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#FDFBF7] p-4 md:p-8 relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-500/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-200/20 blur-[120px] rounded-full" />
+      </div>
+
+      <style>{`
+        .golden-metallic-text {
+          background: linear-gradient(to bottom, #BF953F 0%, #8A6E2F 22%, #BF953F 50%, #8A6E2F 78%, #BF953F 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+        }
+        .premium-border {
+          border: 1px solid rgba(191, 149, 63, 0.2);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .light-premium-card {
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(191, 149, 63, 0.15);
+        }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4"
+          className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6"
         >
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Guest Payment Tracker
+            <h1 className="text-4xl md:text-5xl font-bold mb-2 golden-metallic-text" style={{ fontFamily: 'Taprom' }}>
+              បតីទាន - Guest Payment Tracker
             </h1>
-            <p className="text-gray-300">Track wedding guest contributions with ease</p>
+            <p className="text-amber-800/60 font-medium tracking-wide uppercase text-[10px]">Royal Wedding Collection Portfolio</p>
           </div>
           
           <div className="flex items-center gap-3">
             <Button
               onClick={() => navigate('/')}
               variant="outline"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="bg-white/80 border-amber-200 text-amber-900 hover:bg-amber-50 hover:text-amber-700 backdrop-blur-md rounded-xl transition-all shadow-sm"
             >
-              <LayoutDashboard className="mr-2" size={20} />
+              <LayoutDashboard className="mr-2" size={18} />
               Guest Management
             </Button>
             
             <Button
               onClick={handleLogout}
               variant="destructive"
-              className="bg-red-500/80 hover:bg-red-600 text-white shadow-lg"
+              className="bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700 backdrop-blur-md rounded-xl shadow-sm transition-all"
             >
-              <LogOut className="mr-2" size={20} />
+              <LogOut className="mr-2" size={18} />
               Logout
             </Button>
           </div>
         </motion.div>
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 shadow-2xl"
+            className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all"
           >
-            <div className="flex items-center justify-between">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-3xl rounded-full" />
+            <div className="flex items-center justify-between relative z-10">
               <div>
-                <p className="text-indigo-100 text-sm font-medium mb-1">Total Guests</p>
-                <h3 className="text-3xl font-bold text-white">{filteredGuests.length}</h3>
+                <p className="text-amber-800/40 text-[10px] font-bold uppercase tracking-widest mb-1">Total Guests</p>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-3xl font-bold text-slate-800">{filteredGuests.length}</h3>
+                  <span className="text-[10px] text-amber-800/40 font-medium tracking-tighter uppercase">Recorded</span>
+                </div>
               </div>
-              <Users className="w-12 h-12 text-indigo-100 opacity-50" />
+              <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                <Users className="w-8 h-8 text-amber-600" />
+              </div>
             </div>
           </motion.div>
 
@@ -277,14 +311,20 @@ export default function GuestPaymentPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-2xl"
+            className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all"
           >
-            <div className="flex items-center justify-between">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-3xl rounded-full" />
+            <div className="flex items-center justify-between relative z-10">
               <div>
-                <p className="text-green-100 text-sm font-medium mb-1">Total USD</p>
-                <h3 className="text-3xl font-bold text-white">${totalUSD.toLocaleString()}</h3>
+                <p className="text-amber-800/40 text-[10px] font-bold uppercase tracking-widest mb-1">Total USD</p>
+                <h3 className="text-3xl font-bold text-slate-800">
+                  <span className="text-amber-600 text-xl font-medium mr-1">$</span>
+                  {totalUSD.toLocaleString()}
+                </h3>
               </div>
-              <DollarSign className="w-12 h-12 text-green-100 opacity-50" />
+              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                <DollarSign className="w-8 h-8 text-emerald-600" />
+              </div>
             </div>
           </motion.div>
 
@@ -292,16 +332,20 @@ export default function GuestPaymentPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 shadow-2xl"
+            className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all"
           >
-            <div className="flex items-center justify-between">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full" />
+            <div className="flex items-center justify-between relative z-10">
               <div>
-                <p className="text-blue-100 text-sm font-medium mb-1">Total KHR</p>
-                <h3 className="text-3xl font-bold text-white">
-                  ៛{totalKHR.toLocaleString()}
+                <p className="text-amber-800/40 text-[10px] font-bold uppercase tracking-widest mb-1">Total KHR</p>
+                <h3 className="text-3xl font-bold text-slate-800">
+                  <span className="text-amber-600 text-xl font-medium mr-1">៛</span>
+                  {totalKHR.toLocaleString()}
                 </h3>
               </div>
-              <Banknote className="w-12 h-12 text-blue-100 opacity-50" />
+              <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                <Banknote className="w-8 h-8 text-blue-600" />
+              </div>
             </div>
           </motion.div>
 
@@ -309,16 +353,20 @@ export default function GuestPaymentPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 shadow-2xl"
+            className="bg-white rounded-2xl p-6 relative overflow-hidden border-2 border-amber-200 group shadow-[0_10px_30px_rgba(191,149,63,0.1)] hover:translate-y-[-4px] transition-all"
           >
-            <div className="flex items-center justify-between">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
+            <div className="flex items-center justify-between relative z-10">
               <div>
-                <p className="text-purple-100 text-sm font-medium mb-1">Grand Total</p>
-                <h3 className="text-3xl font-bold text-white">
-                  ${grandTotalUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                <p className="text-amber-700 text-[10px] font-black uppercase tracking-widest mb-1">Grand Total</p>
+                <h3 className="text-3xl font-bold text-amber-900 group-hover:scale-105 transition-all">
+                  <span className="text-xl font-medium mr-1">$</span>
+                  {grandTotalUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </h3>
               </div>
-              <Wallet className="w-12 h-12 text-purple-100 opacity-50" />
+              <div className="bg-amber-100 p-3 rounded-xl border border-amber-200">
+                <Trophy className="w-8 h-8 text-amber-600" />
+              </div>
             </div>
           </motion.div>
         </div>
@@ -328,23 +376,23 @@ export default function GuestPaymentPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 shadow-xl"
+          className="bg-white/60 premium-border backdrop-blur-md rounded-2xl p-6 mb-8"
         >
           {/* Search Bar */}
-          <div className="mb-4">
+          <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-800/30" size={20} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or location..."
-                className="w-full bg-white/20 text-white rounded-lg pl-12 pr-4 py-3 border border-white/30 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Search collection ledger..."
+                className="w-full bg-white text-slate-800 rounded-xl pl-12 pr-4 py-4 border border-amber-100 placeholder-amber-800/20 focus:outline-none focus:ring-2 focus:ring-amber-200 transition-all shadow-sm"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-800/30 hover:text-amber-600 transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -352,108 +400,121 @@ export default function GuestPaymentPage() {
             </div>
           </div>
 
-          {/* Filters and Add Button */}
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-4 items-center">
-              <Filter className="text-white" />
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="bg-white/20 text-white rounded-lg px-4 py-2 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="All">All Categories</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2 bg-amber-50/50 px-4 py-2 rounded-lg border border-amber-100">
+                <Filter size={16} className="text-amber-600/60" />
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="bg-transparent text-amber-900 text-sm font-medium focus:outline-none cursor-pointer"
+                >
+                  <option value="All">All Categories</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                value={filterCurrency}
-                onChange={(e) => setFilterCurrency(e.target.value)}
-                className="bg-white/20 text-white rounded-lg px-4 py-2 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="All">All Currencies</option>
-                {CURRENCIES.map((curr) => (
-                  <option key={curr} value={curr}>
-                    {curr}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2 bg-amber-50/50 px-4 py-2 rounded-lg border border-amber-100">
+                <History size={16} className="text-amber-600/60" />
+                <select
+                  value={filterCurrency}
+                  onChange={(e) => setFilterCurrency(e.target.value)}
+                  className="bg-transparent text-amber-900 text-sm font-medium focus:outline-none cursor-pointer"
+                >
+                  <option value="All">All Currencies</option>
+                  {CURRENCIES.map((curr) => (
+                    <option key={curr} value={curr}>
+                      {curr}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg"
+              className="bg-gradient-to-r from-[#BF953F] to-[#FCF6BA] hover:from-[#8A6E2F] hover:to-[#BF953F] text-amber-900 font-bold px-8 h-12 rounded-xl shadow-[0_4px_15px_rgba(191,149,63,0.15)] transition-all active:scale-95"
             >
               <Plus className="mr-2" size={20} />
-              Add Guest
+              Add Collection Record
             </Button>
           </div>
         </motion.div>
 
         {/* Guest List */}
         {loading ? (
-          <div className="text-center text-white text-xl py-12">Loading...</div>
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="w-12 h-12 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin" />
+            <p className="text-amber-700 font-medium tracking-widest text-xs uppercase animate-pulse">Consulting Ledger...</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence mode="popLayout">
               {filteredGuests.map((guest, index) => (
                 <motion.div
                   key={guest.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-xl hover:shadow-2xl transition-shadow group"
+                  className="bg-white premium-border rounded-2xl p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-b-4 border-b-amber-500/20"
                 >
+                  <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+                  
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono bg-white/20 text-white/70 px-2 py-0.5 rounded">
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <span className="text-[10px] font-black bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">
                           #{filteredGuests.length - index}
                         </span>
-                        <h3 className="text-xl font-bold text-white">{guest.name}</h3>
+                        <h3 className="text-xl font-bold text-slate-800 group-hover:text-amber-700 transition-colors" style={{ fontFamily: 'Taprom' }}>{guest.name}</h3>
                       </div>
                       {guest.location && (
-                        <p className="text-gray-300 text-sm">{guest.location}</p>
+                        <p className="text-amber-700/50 text-[10px] font-bold uppercase tracking-widest ml-10 flex items-center gap-1.5">
+                          <MapPin size={12} /> {guest.location}
+                        </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEditClick(guest)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-400 hover:text-blue-300"
+                        className="p-2 text-amber-700/30 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                       >
-                        <Pencil size={18} />
+                        <Pencil size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteGuest(guest.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
+                        className="p-2 text-red-500/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <Trash2 size={20} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
 
-                  <div className={`${getCategoryColor(guest.category)} text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-3`}>
+                  <div className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg inline-block mb-5">
                     {guest.category}
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Payment:</span>
-                      <span className="text-white font-medium">{guest.paymentMethod}</span>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-black text-amber-900/20">
+                      <span>Via {guest.paymentMethod}</span>
+                      <History size={12} className="opacity-30" />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300 text-sm">Amount:</span>
-                      <span className="text-2xl font-bold text-white">
-                        {guest.currency === 'USD' ? '$' : '៛'}
+                    <div className="flex justify-between items-center bg-[#FDFBF7] p-3 rounded-xl border border-amber-100/50">
+                      <span className="text-amber-800/30 text-[9px] font-black uppercase tracking-[0.1em]">Amount Received</span>
+                      <span className="text-2xl font-bold text-slate-800">
+                        <span className="text-amber-600 text-base font-medium mr-1.5">{guest.currency === 'USD' ? '$' : '៛'}</span>
                         {guest.amount.toLocaleString()}
                       </span>
                     </div>
                     {guest.note && (
-                      <p className="text-gray-400 text-xs italic mt-2">{guest.note}</p>
+                      <div className="bg-amber-50/30 border-l-2 border-amber-200 p-2.5 rounded-r-lg">
+                        <p className="text-amber-800/60 text-[11px] italic leading-relaxed font-medium">“{guest.note}”</p>
+                      </div>
                     )}
                   </div>
                 </motion.div>

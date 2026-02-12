@@ -36,9 +36,10 @@ interface GuestFormProps {
     onGuestAdded?: (guest : GuestType) => void;
     open?: boolean;
     onOpenChange?: (open : boolean) => void;
+    trigger?: React.ReactNode;
 }
 
-const GuestForm = ({onGuestAdded, open, onOpenChange} : GuestFormProps) => {
+const GuestForm = ({onGuestAdded, open, onOpenChange, trigger} : GuestFormProps) => {
     const [fullName, setFullName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [status, setStatus] = useState("");
@@ -159,7 +160,7 @@ const GuestForm = ({onGuestAdded, open, onOpenChange} : GuestFormProps) => {
         <Dialog open={open}
             onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
-                <Button>Add New Guest</Button>
+                {trigger || <Button>Add New Guest</Button>}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

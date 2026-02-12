@@ -54,15 +54,6 @@ export default function WeddingFlowPage() {
                 ].filter(Boolean).join(",");
                 return `${parts[0]}/upload/${transformations}/${parts[1]}`;
             }
-            if(parts.length === 3) {
-                const transformations = [
-                    "f_auto",
-                    "q_auto:eco",
-                    width ? `w_${width}` : "",
-                    blur ? `e_blur:${blur}` : ""
-                ].filter(Boolean).join(",");
-                return `${parts[0]}/upload/${transformations}/${parts[2]}`;
-            }
         }
         
         // ImageKit Optimization
@@ -80,9 +71,6 @@ export default function WeddingFlowPage() {
         return url;
     };
 
-    if (optimizeUrl("https://ik.imagekit.io/lhuqyhzsd/bg-1.mp4/ik-video.mp4?updatedAt=1761989014277")) {
-        console.log("Video optimized");
-    }
 
     const bgVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-1.mp4/ik-video.mp4?updatedAt=1761989014277";
     const introVideo: string = "https://ik.imagekit.io/lhuqyhzsd/intro2.mp4";
@@ -96,10 +84,6 @@ export default function WeddingFlowPage() {
         "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770887879/0F4A7418_t0dugr.jpg",
     ];
 
-    if(photos[3] === null) {
-        console.log("No photos");
-    }
-     
     const {id} = useParams();
     const [guest, setGuest] = useState < Guest | null > (null);
     const [loading, setLoading] = useState(true);
