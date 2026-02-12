@@ -102,7 +102,7 @@ export default function GuestPaymentPage() {
     amount: '',
     note: '',
   });
-  const [paymentMethodOptions, setPaymentMethodOptions] = useState<string[]>([...PAYMENT_METHODS]);
+  const [paymentMethodOptions] = useState<string[]>([...PAYMENT_METHODS]);
   const [isCustomPaymentMethod, setIsCustomPaymentMethod] = useState(false);
   const [customPaymentMethod, setCustomPaymentMethod] = useState("");
 
