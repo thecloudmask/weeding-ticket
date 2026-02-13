@@ -100,7 +100,7 @@ export default function WeddingFlowPage() {
     const introVideo: string = "https://res.cloudinary.com/dfs1iwbh3/video/upload/v1770982568/save_the_dated_xb3me4.mov";
     const bgInfoVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-light.mp4?updatedAt=1762929599409";
     
-    const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770986767/%E1%9E%98%E1%9E%84%E1%9F%92%E1%9E%82%E1%9E%9B%E1%9E%80%E1%9E%B6%E1%9E%9A_yx99sl.png";
+    const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770994369/%E1%9E%98%E1%9E%84%E1%9F%92%E1%9E%82%E1%9E%9B%E1%9E%80%E1%9E%B6%E1%9E%9A_sjczci.png";
     const photoBanner: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770891072/0F4A7939_aodi0b.jpg";
 
     const photos = [
@@ -788,7 +788,7 @@ if (loading)
                             </div>
                             <section id="" className="flex items-center justify-center bg-transparent">
                                 <div className="">
-                                    <img src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770971265/%E1%9E%80%E1%9E%98%E1%9F%92%E1%9E%98%E1%9E%9C%E1%9E%B7%E1%9E%92%E1%9E%B8%E1%9E%94%E1%9E%BB%E1%9E%8E%E1%9F%92%E1%9E%99_ly1mgj.png", { width: 800 })}
+                                    <img src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770994369/%E1%9E%80%E1%9E%98%E1%9F%92%E1%9E%98%E1%9E%9C%E1%9E%B7%E1%9E%92%E1%9E%B8%E1%9E%94%E1%9E%BB%E1%9E%8E%E1%9F%92%E1%9E%99_a3gzvd.png", { width: 800 })}
                                     alt=""
                                    />
                                 </div>

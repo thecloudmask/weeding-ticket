@@ -128,10 +128,6 @@ const GuestForm = ({onGuestAdded, open, onOpenChange, trigger, mode = 'drawer'} 
                 onGuestAdded(newGuest as GuestType);
             }
 
-            const url = `${
-                window.location.origin
-            }/wedding/${id}`;
-            setGeneratedLink(url);
             setStatus("✅ បន្ថែមភ្ញៀវបានជោគជ័យ!");
             
             // Clear inputs for next entry (Batch mode)
@@ -139,6 +135,7 @@ const GuestForm = ({onGuestAdded, open, onOpenChange, trigger, mode = 'drawer'} 
             setPhone("");
             setEmail("");
             setAddress("");
+            setGeneratedLink("");
             setIsCustomTitle(false);
             setCustomTitle("");
             // Auto focus back to name input for fast entry
@@ -213,7 +210,10 @@ const GuestForm = ({onGuestAdded, open, onOpenChange, trigger, mode = 'drawer'} 
                     <Input id="fullName"
                         ref={nameInputRef}
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (status) setStatus("");
+                        }}
                         placeholder="វាយឈ្មោះនៅទីនេះ..."
                         onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(e); }}
                         className="h-12 px-5 bg-white border-slate-300 text-base focus:border-primary shadow-none rounded-xl"

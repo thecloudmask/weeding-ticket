@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem
+} from "@/components/ui/dropdown-menu";
+import { ChevronDownIcon, Plus } from "lucide-react";
 
 interface Guest {
   id: string;
@@ -28,11 +36,32 @@ const EditGuestModal = ({ guest, open, onOpenChange, onUpdate }: EditGuestModalP
   const [address, setAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [guestTitle] = useState<string[]>([
+    'Sister.', 'Brother.', 'Friend.', 'Bestie.', 'Dear.', 'Mr.', 'Mrs.',
+    'ប្អូន.', 'ប្អូនប្រុស.', 'ប្អូនស្រី.', 'លោក.', 'លោកស្រី.', 'អ្នកស្រី.', 'អ្នកនាង.', 'កញ្ញា.',
+    'បង.', 'បងប្រុស.', 'អ្នកគ្រូ.', 'លោកគ្រូ.', 'ពួកម៉ាក', 'មេទ័ពធំ.', 'សេនាប្រមុខ.',
+    'ម្រាមដៃបីសាច.', 'សុភាពបុរសក្លែងក្លាយ.', 'ហ៊ា.', 'ចែ.', 'បងស្រី.', 'អ្នកមីង.', 'លោកពូ.',
+    'អុី.', 'ឃូ.', 'ចឹក.', 'ទ្រា.', 'ចី.', 'ឃិម.'
+  ]);
+
+  const [isCustomTitle, setIsCustomTitle] = useState(false);
+  const [customTitle, setCustomTitle] = useState("");
+
   // Reset form when guest changes
   useEffect(() => {
     if (guest) {
       setFullName(guest.fullName || "");
-      setTitle(guest.title || "");
+      
+      const currentTitle = guest.title || "";
+      if (currentTitle && !guestTitle.includes(currentTitle)) {
+        setIsCustomTitle(true);
+        setCustomTitle(currentTitle);
+        setTitle("custom");
+      } else {
+        setIsCustomTitle(false);
+        setTitle(currentTitle || guestTitle[0]);
+      }
+
       setPhone(guest.phone || "");
       setEmail(guest.email || "");
       setAddress(guest.address || "");
@@ -48,10 +77,11 @@ const EditGuestModal = ({ guest, open, onOpenChange, onUpdate }: EditGuestModalP
 
     try {
       setIsSubmitting(true);
+      const finalTitle = isCustomTitle ? customTitle.trim() : title;
       const updatedGuest: Guest = {
         id: guest.id,
         fullName: fullName.trim(),
-        title: title.trim(),
+        title: finalTitle,
         phone: phone.trim(),
         email: email.trim(),
         address: address.trim()
@@ -66,13 +96,6 @@ const EditGuestModal = ({ guest, open, onOpenChange, onUpdate }: EditGuestModalP
   };
 
   const handleCancel = () => {
-    if (guest) {
-      setFullName(guest.fullName || "");
-      setTitle(guest.title || "");
-      setPhone(guest.phone || "");
-      setEmail(guest.email || "");
-      setAddress(guest.address || "");
-    }
     onOpenChange(false);
   };
 
@@ -80,24 +103,64 @@ const EditGuestModal = ({ guest, open, onOpenChange, onUpdate }: EditGuestModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-8 rounded-2xl">
+      <DialogContent className="max-w-2xl p-8 rounded-2xl bg-white">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-2xl font-black text-slate-900" style={{ fontFamily: 'Kantumruy Pro' }}>កែសម្រួលព័ត៌មានភ្ញៀវ</DialogTitle>
-          <DialogDescription className="text-sm text-slate-500 font-medium">
+          <DialogDescription className="text-sm text-slate-500 font-medium font-sans">
             ធ្វើបច្ចុប្បន្នភាពព័ត៌មានរបស់ភ្ញៀវឱ្យបានត្រឹមត្រូវ។
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2.5">
-              <Label htmlFor="editTitle" className="text-base font-bold text-slate-700 ml-1">គោរមងារ</Label>
-              <Input
-                id="editTitle"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="គោរមងារ"
-                className="h-12 px-5 text-base rounded-xl border-slate-200 focus:border-primary transition-all"
-              />
+              <Label className="text-base font-bold text-slate-700 ml-1">
+                {isCustomTitle ? "គោរមងារថ្មី" : "គោរមងារ"}
+              </Label>
+              {isCustomTitle ? (
+                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+                  <Input
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    placeholder="វាយបញ្ចូលគោរមងារ..."
+                    className="h-12 px-5 text-base rounded-xl border-slate-200 focus:border-primary transition-all flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsCustomTitle(false)}
+                    className="h-12 text-xs text-primary hover:bg-primary/5 font-bold cursor-pointer"
+                  >
+                    បញ្ជី
+                  </Button>
+                </div>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full justify-between flex items-center gap-2 h-12 px-5 bg-white border-slate-200 hover:bg-slate-50 transition-colors text-base font-medium text-slate-700 shadow-none cursor-pointer rounded-xl">
+                      <span className="truncate">{title || "ជ្រើសរើស"}</span>
+                      <ChevronDownIcon className="w-5 h-5 text-slate-400" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[280px] h-[350px] overflow-y-auto bg-white border-slate-200 text-slate-700">
+                    <DropdownMenuRadioGroup value={title} onValueChange={setTitle}>
+                      {guestTitle.map((t) => (
+                        <DropdownMenuRadioItem key={t} value={t} className="py-2.5 text-sm hover:bg-slate-50 focus:bg-slate-50 cursor-pointer">
+                          {t}
+                        </DropdownMenuRadioItem>
+                      ) )}
+                      <DropdownMenuRadioItem 
+                        value="custom" 
+                        className="py-2.5 text-primary font-bold border-t border-slate-100 text-sm hover:bg-slate-50 focus:bg-slate-50 cursor-pointer" 
+                        onClick={() => setIsCustomTitle(true)}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        បន្ថែមថ្មី...
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="editFullName" className="text-base font-bold text-slate-700 ml-1">ឈ្មោះពេញ *</Label>

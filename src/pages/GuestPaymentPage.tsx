@@ -44,7 +44,6 @@ import {
   LayoutDashboard,
   CheckCircle2,
   Trophy,
-  Send,
 
   TrendingUp,
   PieChart,
@@ -360,13 +359,6 @@ export default function GuestPaymentPage() {
       console.error('Error exporting excel:', error);
       toast.error('មានបញ្ហាក្នុងការទាញយកឯកសារ Excel');
     }
-  };
-
-  const handleSendThanks = (guest: GuestPayment) => {
-    const amountStr = `${guest.currency === 'USD' ? '$' : '៛'}${guest.amount.toLocaleString()}`;
-    const message = `សូមអរគុណលោក ${guest.name} ដែលបានចូលរួមកម្មវិធីមង្គលការ និងផ្តល់កិត្តិយសជាចំណងដៃចំនួន ${amountStr}។ សូមជូនពរសុខភាពល្អ សំណាងល្អ និងជោគជ័យគ្រប់ភារកិច្ច! 🙏✨`;
-    const encodedMsg = encodeURIComponent(message);
-    window.open(`https://t.me/share/url?url=${encodedMsg}`, '_blank');
   };
 
   const handleNameChange = (val: string) => {
@@ -710,13 +702,6 @@ export default function GuestPaymentPage() {
                          </TableCell>
                          <TableCell className="text-right px-8 py-5">
                             <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handleSendThanks(guest)}
-                                title="ផ្ញើសារអរគុណ"
-                                className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all active:scale-90 cursor-pointer border border-emerald-100 shadow-sm"
-                              >
-                                <Send size={16} />
-                              </button>
                               <button
                                 onClick={() => handleEditClick(guest)}
                                 className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90 cursor-pointer border border-slate-100"

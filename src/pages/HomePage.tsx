@@ -76,8 +76,9 @@ export default function HomePage() {
         };
     }, []);
 
-    const handleGuestAdded = (newGuest: Guest) => {
-        setGuests(prev => [...prev, newGuest]);
+    const handleGuestAdded = (_newGuest: Guest) => {
+        // We don't need to manually add to state anymore because 
+        // onSnapshot listener in useEffect will handle it automatically
     };
     
     // Filter guests based on search query and unpaid status
@@ -626,7 +627,7 @@ export default function HomePage() {
                             onClick={confirmDelete}
                             className="bg-red-500 hover:bg-red-600 text-white"
                         >
-                            លុបភី្ញៀវ
+                            លុបភ្ញៀវ
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
