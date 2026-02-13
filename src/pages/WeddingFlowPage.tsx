@@ -2,14 +2,15 @@ import {useState, useEffect, useRef} from "react";
 import {useParams} from "react-router-dom";
 import {doc, getDoc, updateDoc} from "firebase/firestore";
 import {db} from "../../firebase";
-import {motion, AnimatePresence} from "framer-motion";
+import {motion, AnimatePresence, useScroll, useSpring} from "framer-motion";
 import musicSRC from "../assets/bg/bgmusic.mp3";
 import titleFontSRC from "../assets/fonts/Kh Ang Penh.ttf"
 import guestNameFontSRC from "../assets/fonts/Taprom.ttf"
+import moulpaliFontSRC from "../assets/fonts/Moulpali-Regular.ttf"
+import nellasueFontSRC from "../assets/fonts/NellaSue.ttf"
 
 import {
     Calendar,
-    Clock,
     MapPin,
     Image as ImageIcon,
     VolumeX,
@@ -24,9 +25,8 @@ import {
     ChevronRight,
     Sparkles,
     Music,
-    History
+    Share2
 } from "lucide-react";
-import lineNameImg from "../assets/img/lineName.png";
 import buttonOpenImg from "../assets/img/buttonOpen.png";
 import telegramQR from "../assets/img/mengley.svg";
 
@@ -46,6 +46,18 @@ interface Guest {
     declineReason?: string;
     wishes?: string;
 }
+
+const NavButton = ({ onClick, icon: Icon, label, active }: { onClick: () => void, icon: any, label: string, active: boolean }) => (
+    <button 
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-300 min-w-[56px] group ${
+            active ? 'bg-[#BF953F] text-black' : 'text-[#BF953F] hover:bg-[#BF953F]/10'
+        }`}
+    >
+        <Icon size={20} className={`mb-1 transition-transform duration-300 group-active:scale-90 ${active ? 'fill-black/20' : ''}`} />
+        <span className="text-[9px] font-['Moulpali'] tracking-tighter uppercase opacity-80">{label}</span>
+    </button>
+);
 
 export default function WeddingFlowPage() {
     // --- Image Optimization Utility ---
@@ -83,7 +95,7 @@ export default function WeddingFlowPage() {
     };
 
 
-    const bgVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-1.mp4/ik-video.mp4?updatedAt=1761989014277";
+    const bgVideo: string = "https://res.cloudinary.com/dfs1iwbh3/video/upload/v1770971876/1080_eayu3q.mov";
     const introVideo: string = "https://ik.imagekit.io/lhuqyhzsd/intro2.mp4";
     const bgInfoVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-light.mp4?updatedAt=1762929599409";
     
@@ -159,6 +171,29 @@ export default function WeddingFlowPage() {
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [isOpening, setIsOpening] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+
+    // --- Enhanced UI Hooks ---
+    const { scrollYProgress } = useScroll();
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    });
+
+
+    const handleShare = () => {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Wedding Invitation',
+                text: `សូមអញ្ជើញចូលរួមក្នុងកម្មវិធីមង្គលការរបស់ពួកយើង`,
+                url: window.location.href,
+            })
+            .catch((error) => console.error('Error sharing', error));
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            toast.success("បានចម្លង Link រួចរាល់សម្រាប់ចែករំលែក!");
+        }
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -467,52 +502,75 @@ if (loading)
                                 font-family: 'GuestNameFont';
                                 src: url(${guestNameFontSRC}) format('truetype');
                                 }
+                                @font-face {
+                                font-family: 'Moulpali';
+                                src: url(${moulpaliFontSRC}) format('truetype');
+                                }
+                                @font-face {
+                                font-family: 'NellaSue';
+                                src: url(${nellasueFontSRC}) format('truetype');
+                                }
                             `
                             }</style>
-                            <h1 className="text-2xl w-2/3">
-                                <span className="golden-text"
-                                    style={
+                            <motion.div
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 8, duration: 1.5, ease: "easeOut" }}
+                                className="flex flex-col items-center w-full"
+                            >
+                                <h1 className="flex flex-row items-center mb-14 gap-2">
+                                    <span 
+                                        className="font-bold tracking-wide uppercase"
+                                        style={{ 
+                                            color: '#FFFFFF',
+                                            fontFamily: guest?.title && /[\u1780-\u17FF]/.test(guest.title) ? "'Kantumruy Pro'" : "'Poppins'", 
+                                            fontSize: "1.4rem",
+                                            textShadow: `
+                                                0 0 8px rgba(255, 255, 255, 0.8),
+                                                0 0 15px rgba(255, 215, 0, 0.6),
+                                                0 0 30px rgba(255, 215, 0, 0.4)
+                                            `
+                                        }}
+                                    >
+                                        {guest?.title}
+                                    </span>
+                                    <span 
+                                        className="font-bold tracking-wide"
+                                        style={{ 
+                                            color: '#FFFFFF',
+                                            fontFamily: guest?.fullName && /[\u1780-\u17FF]/.test(guest.fullName) ? "'Kantumruy Pro'" : "'Poppins'", 
+                                            fontSize: "1.8rem",
+                                            textShadow: `
+                                                0 0 8px rgba(255, 255, 255, 0.8),
+                                                0 0 15px rgba(255, 215, 0, 0.6),
+                                                0 0 30px rgba(255, 215, 0, 0.4)
+                                            `
+                                        }}
+                                    >
+                                        {guest?.fullName}
+                                    </span>
+                                </h1>
+                                <motion.img src={buttonOpenImg}
+                                    style={{ filter: 'brightness(1.2) drop-shadow(0 0 15px rgba(255, 215, 0, 0.5))' }}
+                                    className="w-50 mb-20 cursor-pointer"
+                                    onClick={handleOpenClick}
+                                    animate={
                                         {
-                                            fontFamily: "TitleFont",
-                                            fontSize: "22px"
+                                            scale: [
+                                                1, 1.1, 1
+                                            ],
+                                            opacity: [1, 0.9, 1]
                                         }
-                                }>
-                                    {
-                                    guest ?. title
-                                } </span>
-                                {" "}
-                                <span className="golden-text"
-                                    style={
+                                    }
+                                    transition={
                                         {
-                                            fontFamily: "GuestNameFont",
-                                            fontSize: "1.2rem"
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            repeatType: "loop",
+                                            ease: "easeInOut"
                                         }
-                                }>
-                                    {
-                                    guest ?. fullName
-                                } </span>
-                            </h1>
-                            <img src={lineNameImg}
-                                className="w-96 mb-6"/>
-                            <motion.img src={buttonOpenImg}
-                                className="w-50 mb-33 cursor-pointer bg-amber-50"
-                                onClick={handleOpenClick}
-                                animate={
-                                    {
-                                        scale: [
-                                            1, 1.1, 1
-                                        ],
-                                        opacity: [1, 0.9, 1]
-                                    }
-                                }
-                                transition={
-                                    {
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        repeatType: "loop",
-                                        ease: "easeInOut"
-                                    }
-                                }/>
+                                    }/>
+                            </motion.div>
                         </div>
                     </motion.div>
                 )
@@ -622,6 +680,11 @@ if (loading)
                         initial="hidden"
                         animate="visible"
                         exit="exit">
+                        <motion.div 
+                            className="fixed top-0 left-0 right-0 h-1 bg-[#BF953F] origin-left z-[100] shadow-[0_0_10px_rgba(191,149,63,0.5)]"
+                            style={{ scaleX }}
+                        />
+
                         {/* Top-right music toggle */}
                         <Button onClick={toggleMusic}
                             variant="outline" size="icon" className="rounded-full bg-amber-900/80 border-[#BF953F]/40 fixed top-4 right-4 z-[60] backdrop-blur-md shadow-lg shadow-black/20 group overflow-hidden">
@@ -644,45 +707,25 @@ if (loading)
                             <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 pointer-events-none" />
                         </Button>
 
-                        {/* Bottom floating buttons */}
-                        <div className="fixed  bottom-6 left-1/2 -translate-x-1/2 flex justify-between gap-3 z-50 bg-amber-900  rounded-full p-4 border-1 border-amber-500 by">
-                            <Button onClick={
-                                    () => scrollToSection("calendar")
-                                }
-                               variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <Calendar size={24} className="text-yellow-400"/>
-                            </Button>
-                             <Button onClick={
-                                    () => scrollToSection("time")
-                                }
-                               variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <Clock size={24} className="text-yellow-400"/>
-                            </Button>
-                            <Button onClick={
-                                    () => scrollToSection("map")
-                                }
-                                variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <MapPin size={24} className="text-yellow-400"/>
-                            </Button>
-                            <Button onClick={
-                                    () => scrollToSection("gallery")
-                                }
-                                variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <ImageIcon size={24} className="text-yellow-400"/>
-                            </Button>
-                            <Button onClick={
-                                    () => scrollToSection("gift")
-                                }
-                                variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <Gift size={24} className="text-yellow-400"/>
-                            </Button>
-                            {/* <Button onClick={
-                                    () => scrollToSection("message")
-                                }
-                                variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <MessageSquare size={24} className="text-yellow-400"/>
-                            </Button> */}
-                        </div>
+                        {/* Top-left share toggle */}
+                        <Button onClick={handleShare}
+                            variant="outline" size="icon" className="rounded-full bg-amber-900/80 border-[#BF953F]/40 fixed top-4 left-4 z-[60] backdrop-blur-md shadow-lg shadow-black/20 group">
+                            <Share2 size={20} className="text-[#BF953F]" />
+                        </Button>
+
+                        {/* Premium Floating Navigation Bar */}
+                        <motion.div 
+                            initial={{ y: 100, x: "-50%", opacity: 0 }}
+                            animate={{ y: 0, x: "-50%", opacity: 1 }}
+                            transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+                            className="fixed bottom-6 left-1/2 flex items-center gap-1.5 sm:gap-4 z-50 bg-[#1a1103]/70 backdrop-blur-xl rounded-full p-2.5 border border-[#BF953F]/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5"
+                        >
+                            <NavButton onClick={() => scrollToSection("calendar")} icon={Calendar} label="កម្មវិធី" active={false} />
+                            <NavButton onClick={() => scrollToSection("banner-video")} icon={Play} label="វីដេអូ" active={false} />
+                            <NavButton onClick={() => scrollToSection("map")} icon={MapPin} label="ផែនទី" active={false} />
+                            <NavButton onClick={() => scrollToSection("gallery")} icon={ImageIcon} label="រូបថត" active={false} />
+                            <NavButton onClick={() => scrollToSection("gift")} icon={Gift} label="ចំណងដៃ" active={false} />
+                        </motion.div>
                         {/* Section content with background video */}
                         <div className="relative w-full min-h-screen overflow-x-hidden">
                             {/* Fixed background video */}
@@ -734,14 +777,6 @@ if (loading)
                                 </div>
                             </section>
                             <div className="flex flex-col items-center justify-center pt-28 pb-10 w-full" id="">
-                                <motion.div 
-                                    initial={{ scale: 0 }}
-                                    whileInView={{ scale: 1 }}
-                                    viewport={{ once: true }}
-                                    className="w-16 h-16 rounded-full bg-amber-900/40 border-2 border-[#BF953F]/40 flex items-center justify-center mb-6 shadow-lg backdrop-blur-md"
-                                >
-                                    <History size={32} className="text-[#BF953F]" />
-                                </motion.div>
                                 <div className="flex flex-row items-center justify-center w-full">
                                     <div className="flex-1 px-4">
                                         <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
@@ -757,8 +792,8 @@ if (loading)
                                 </div>
                             </div>
                             <section id="" className="flex items-center justify-center bg-transparent">
-                                <div className="p-2">
-                                    <img src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770864787/Form-2_PNG_ziz6ij.png", { width: 800 })}
+                                <div className="">
+                                    <img src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770971265/%E1%9E%80%E1%9E%98%E1%9F%92%E1%9E%98%E1%9E%9C%E1%9E%B7%E1%9E%92%E1%9E%B8%E1%9E%94%E1%9E%BB%E1%9E%8E%E1%9F%92%E1%9E%99_ly1mgj.png", { width: 800 })}
                                     alt=""
                                    />
                                 </div>
@@ -1207,6 +1242,7 @@ if (loading)
                                         />
                                     </div>
                                 </motion.a>
+
                                 
                                 <motion.div 
                                     animate={{ x: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
@@ -1468,11 +1504,17 @@ if (loading)
                                                 
                                                 <div className="text-center">
                                                     <h3 style={{fontFamily: "Moulpali"}} className="text-[#BF953F] text-lg mb-6">ទំនាក់ទំនងតាម Telegram</h3>
-                                                    <div className="bg-white p-4 rounded-xl inline-block mb-4">
+                                                    <div className="bg-white p-4 rounded-xl inline-block mb-4 relative overflow-hidden group/qr">
                                                         <img 
                                                             src={telegramQR} 
                                                             alt="Telegram QR Code" 
                                                             className="w-48 h-48 object-contain"
+                                                        />
+                                                        {/* Scanning Line Animation */}
+                                                        <motion.div 
+                                                            className="absolute inset-x-0 h-1 bg-sky-500/50 shadow-[0_0_15px_#0ea5e9] z-10"
+                                                            animate={{ top: ["0%", "100%", "0%"] }}
+                                                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                                                         />
                                                     </div>
                                                     <p className="text-white/50 text-sm font-light">
