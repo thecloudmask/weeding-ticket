@@ -816,7 +816,7 @@ if (loading)
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
                             </div>
-                            <div className="relative z-20 -mb-16 mt-8 w-full flex flex-col items-center gap-6">
+                            <div className="relative z-20 -mb-12 mt-8 w-full flex flex-col items-center gap-6">
                                 <motion.button 
                                     onClick={addToGoogleCalendar}
                                     whileHover={{ scale: 1.05 }}
@@ -1128,6 +1128,10 @@ if (loading)
                                 <div className="flex-1 px-4">
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
+                            </div>
+
+                            <div>
+
                             </div>
 
                             <motion.div 
@@ -1444,39 +1448,6 @@ if (loading)
 
                              <footer className="relative z-10 py-12 pb-24 flex flex-col items-center justify-center text-center pointer-events-auto">
                                 <div className="w-32 h-px bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent mb-6" />
-                                
-                                <p className="text-[#BF953F]/50 text-[10px] uppercase tracking-[0.3em] font-light mb-3">
-                                    System Developed By
-                                </p>
-                                
-                                <div className="group relative cursor-pointer hover:scale-105 transition-transform duration-300">
-                                    <div className="absolute -inset-3 bg-[#BF953F]/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                    <h3 
-                                        style={{fontFamily: "Moulpali"}} 
-                                        className="relative text-transparent bg-clip-text bg-gradient-to-r from-[#BF953F] via-[#F3E5AB] to-[#BF953F] text-base md:text-lg animate-gradient bg-300% drop-shadow-[0_2px_10px_rgba(191,149,63,0.2)]"
-                                    >
-                                        ក្រុមការងារបច្ចេកទេស
-                                    </h3>
-                                </div>
-
-                                <div className="mt-5 flex items-center gap-4">
-                                   <a href="tel:098943324" className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#BF953F]/10 border border-[#BF953F]/30 hover:bg-[#BF953F]/20 transition-all group">
-                                        <Phone size={14} className="text-[#BF953F] group-hover:scale-110 transition-transform" />
-                                        <span className="text-[#BF953F] text-xs font-mono tracking-wider">098 943 324</span>
-                                   </a>
-                                   
-                                   <button 
-                                        onClick={() => setShowTelegramQR(true)}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#BF953F]/10 border border-[#BF953F]/30 hover:bg-[#BF953F]/20 transition-all group cursor-pointer"
-                                    >
-                                        <QrCode size={14} className="text-[#BF953F] group-hover:scale-110 transition-transform" />
-                                        <span className="text-[#BF953F] text-xs font-mono tracking-wider uppercase">Telegram</span>
-                                   </button>
-                                </div>
-                                
-                                <p className="text-white/10 text-[9px] mt-8 tracking-widest font-light">
-                                    © {new Date().getFullYear()} E-INVITATION SYSTEM
-                                </p>
 
                                 {/* Telegram QR Modal */}
                                 <AnimatePresence>
@@ -1525,6 +1496,105 @@ if (loading)
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+
+                                {/* Refined & Legible Credits Section */}
+                                <div className="mt-28 flex flex-col items-center gap-16 pb-20">
+                                    
+                                    {/* Obsidian Glass Card for Maximum Contrast */}
+                                    <div className="w-full max-w-sm flex flex-col items-center gap-12 p-10 rounded-[50px] bg-black/50 border border-white/10 backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.3)]">
+                                        
+                                        {/* Technical Credits */}
+                                        <div className="flex flex-col items-center gap-8 w-full">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <span 
+                                                    style={{ fontFamily: "'Poppins'", fontSize: "0.75rem" }}
+                                                    className="text-[#FFDD73]/60 uppercase tracking-[0.4em] font-medium"
+                                                >
+                                                    System Developed By
+                                                </span>
+                                                <h3 
+                                                    style={{ 
+                                                        fontFamily: "Moulpali", 
+                                                        fontSize: "1.5rem",
+                                                        textShadow: "0 2px 15px rgba(255, 221, 115, 0.3)"
+                                                    }}
+                                                    className="text-[#FFDD73] drop-shadow-md"
+                                                >
+                                                    ក្រុមការងារបច្ចេកទេស
+                                                </h3>
+                                            </div>
+
+                                            <div className="flex flex-col gap-3 w-full">
+                                                <div className="flex flex-row items-center gap-3 w-full">
+                                                    <a 
+                                                        href="tel:098943324"
+                                                        className="flex-1 flex items-center justify-center gap-3 px-4 py-3.5 rounded-2xl bg-white/[0.05] border border-[#FFDD73]/30 hover:bg-[#FFDD73]/10 hover:border-[#FFDD73] transition-all duration-500 group"
+                                                    >
+                                                        <Phone size={12} className="text-[#FFDD73] group-hover:scale-110 transition-transform" />
+                                                        <span style={{ fontFamily: "'Poppins'" }} className="text-[#FFDD73] text-[10px] font-semibold tracking-wide">098 943 324</span>
+                                                    </a>
+                                                    <button 
+                                                        onClick={() => setShowTelegramQR(true)}
+                                                        className="flex-1 flex items-center justify-center gap-3 px-4 py-3.5 rounded-2xl bg-white/[0.05] border border-[#FFDD73]/30 hover:bg-[#FFDD73]/10 hover:border-[#FFDD73] transition-all duration-500 group"
+                                                    >
+                                                        <QrCode size={12} className="text-[#FFDD73] group-hover:scale-110 transition-transform" />
+                                                        <span style={{ fontFamily: "'Poppins'" }} className="text-[#FFDD73] text-[10px] font-semibold uppercase tracking-wider">Telegram</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Elegant Star Separator */}
+                                        <div className="flex items-center gap-4 w-full opacity-40">
+                                            <div className="h-px flex-1 bg-gradient-to-l from-[#FFDD73] to-transparent" />
+                                            <div className="rotate-45 w-1.5 h-1.5 bg-[#FFDD73]" />
+                                            <div className="h-px flex-1 bg-gradient-to-r from-[#FFDD73] to-transparent" />
+                                        </div>
+
+                                        {/* Cinematic Studio Credits */}
+                                        <div className="flex flex-col items-center gap-6 w-full">
+                                            <span 
+                                                style={{ fontFamily: "'Poppins'", fontSize: "0.75rem" }}
+                                                className="text-[#FFDD73]/60 uppercase tracking-[0.4em] font-medium"
+                                            >
+                                                Cinematic Experience By
+                                            </span>
+                                            <motion.a 
+                                                href="https://blendstudio.web.app/" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="relative group px-1 py-1 rounded-full bg-white/[0.03] border border-white/10 hover:border-[#FFDD73]/40 transition-all duration-700 overflow-hidden"
+                                            >
+                                                {/* Ambient Glow */}
+                                                <div className="absolute inset-0 bg-gradient-to-b from-[#FFDD73]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                                
+                                                <img 
+                                                    src="https://firebasestorage.googleapis.com/v0/b/thecosmosdigi.appspot.com/o/logo%2Fblend_studio.png?alt=media&token=dcb16bf4-c08f-4260-924d-1ccae4163dbf" 
+                                                    alt="Blend Studio" 
+                                                    className="h-16 w-16 object-contain brightness-125 opacity-90 group-hover:opacity-100 transition-all duration-700" 
+                                                />
+                                            </motion.a>
+                                        </div>
+                                    </div>
+
+                                    {/* Final Footer Details */}
+                                    <div className="flex flex-col items-center gap-6">
+                                        <div className="flex items-center gap-3 opacity-20">
+                                            <div className="h-px w-16 bg-gradient-to-l from-white to-transparent" />
+                                            <Sparkles size={14} className="text-[#FFDD73]" />
+                                            <div className="h-px w-16 bg-gradient-to-r from-white to-transparent" />
+                                        </div>
+                                        
+                                        <p 
+                                            style={{ fontFamily: "'Poppins'", fontSize: "0.75rem" }}
+                                            className="text-[#FFDD73]/60 font-light"
+                                        >
+                                            ©{new Date().getFullYear()} RAMY & MENGCHOU រក្សាសិទ្ធិគ្រប់យ៉ាង។
+                                        </p>
+                                    </div>
+                                </div>
                             </footer>
                         </div>
                     </motion.div>
