@@ -100,7 +100,7 @@ export default function WeddingFlowPage() {
     const introVideo: string = "https://res.cloudinary.com/dfs1iwbh3/video/upload/v1770982568/save_the_dated_xb3me4.mov";
     const bgInfoVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-light.mp4?updatedAt=1762929599409";
     
-    const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770878132/Picture7_qltipm.png";
+    const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770986767/%E1%9E%98%E1%9E%84%E1%9F%92%E1%9E%82%E1%9E%9B%E1%9E%80%E1%9E%B6%E1%9E%9A_yx99sl.png";
     const photoBanner: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770891072/0F4A7939_aodi0b.jpg";
 
     const photos = [
@@ -170,7 +170,6 @@ export default function WeddingFlowPage() {
     const [showWishesInput, setShowWishesInput] = useState(false);
     const [showTelegramQR, setShowTelegramQR] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
-    const [, setIsOpening] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
     // --- Enhanced UI Hooks ---
@@ -240,11 +239,7 @@ export default function WeddingFlowPage() {
     }, [id, isMusicPlaying]);
 
     const handleOpenClick = async () => {
-        setIsOpening(true);
-        setTimeout(() => {
-            setStage("intro");
-            setIsOpening(false);
-        }, 1500); // Wait for curtains
+        setStage("intro");
         
         // Mark as viewed if pending
         if (guest && id && (!guest.status || guest.status === 'pending')) {
@@ -438,7 +433,7 @@ if (loading)
 
                         {/* Navigation - PREV */}
                         <button 
-                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all group scale-90 md:scale-100"
+                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-[#BF953F] hover:text-[#BF953F]/80 z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all group scale-90 md:scale-100"
                             onClick={handlePrevPhoto}
                         >
                             <ChevronLeft size={40} className="group-hover:-translate-x-1 transition-transform" />
@@ -468,7 +463,7 @@ if (loading)
 
                         {/* Navigation - NEXT */}
                         <button 
-                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all group scale-90 md:scale-100"
+                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-[#BF953F] hover:text-[#BF953F]/80 z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all group scale-90 md:scale-100"
                             onClick={handleNextPhoto}
                         >
                             <ChevronRight size={40} className="group-hover:translate-x-1 transition-transform" />
@@ -481,10 +476,10 @@ if (loading)
                 {
                 stage === "invite" && (
                     <motion.div key="invite" className="absolute inset-0"
-                        variants={fadeVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit">
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1 }}
+                    >
                         <video src={bgVideo}
                             autoPlay
                             muted
