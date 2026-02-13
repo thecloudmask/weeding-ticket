@@ -11,18 +11,20 @@ import {
     Calendar,
     Clock,
     MapPin,
-    Image,
-    Volume2,
+    Image as ImageIcon,
     VolumeX,
     Gift,
     X,
     Check,
     UserX,
-    CalendarPlus,
-    Map,
-    Navigation,
     Phone,
-    QrCode
+    QrCode,
+    Play,
+    ChevronLeft,
+    ChevronRight,
+    Sparkles,
+    Music,
+    History
 } from "lucide-react";
 import lineNameImg from "../assets/img/lineName.png";
 import buttonOpenImg from "../assets/img/buttonOpen.png";
@@ -31,9 +33,6 @@ import telegramQR from "../assets/img/mengley.svg";
 import {Button} from "../components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { WeddingCountdown } from "@/components/CountDown";
-import Lottie from "lottie-react";
-import giftAnimationData from "../assets/lottie/Referralgift.json";
-import arrowAnimationData from "../assets/lottie/arrow.json";
 import { toast } from "sonner";
 
 interface Guest {
@@ -151,13 +150,14 @@ export default function WeddingFlowPage() {
 
     const [stage, setStage] = useState < "invite" | "intro" | "info" > ("invite");
     const [isMusicPlaying, setIsMusicPlaying] = useState(true);
-    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
     const [declineReason, setDeclineReason] = useState("");
     const [wishes, setWishes] = useState("");
     const [showDeclineInput, setShowDeclineInput] = useState(false);
     const [showWishesInput, setShowWishesInput] = useState(false);
     const [showTelegramQR, setShowTelegramQR] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
+    const [isOpening, setIsOpening] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
@@ -204,7 +204,11 @@ export default function WeddingFlowPage() {
     }, [id, isMusicPlaying]);
 
     const handleOpenClick = async () => {
-        setStage("intro");
+        setIsOpening(true);
+        setTimeout(() => {
+            setStage("intro");
+            setIsOpening(false);
+        }, 1500); // Wait for curtains
         
         // Mark as viewed if pending
         if (guest && id && (!guest.status || guest.status === 'pending')) {
@@ -275,9 +279,30 @@ export default function WeddingFlowPage() {
         const section = document.getElementById(id);
         if (section)
             section.scrollIntoView({behavior: "smooth"});
-        
-
     };
+
+    const handleNextPhoto = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (selectedPhotoIndex === null) return;
+        setSelectedPhotoIndex((selectedPhotoIndex + 1) % photos.length);
+    };
+
+    const handlePrevPhoto = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (selectedPhotoIndex === null) return;
+        setSelectedPhotoIndex((selectedPhotoIndex - 1 + photos.length) % photos.length);
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (selectedPhotoIndex === null) return;
+            if (e.key === "ArrowRight") handleNextPhoto();
+            if (e.key === "ArrowLeft") handlePrevPhoto();
+            if (e.key === "Escape") setSelectedPhotoIndex(null);
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedPhotoIndex]);
 
     const addToGoogleCalendar = () => {
         const title = encodeURIComponent("ពិធីមង្គលការ Ramy & Mengchou");
@@ -359,33 +384,59 @@ if (loading)
             
             {/* Photo Modal */}
             <AnimatePresence>
-                {selectedPhoto && (
+                {selectedPhotoIndex !== null && (
                     <motion.div 
-                        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => setSelectedPhoto(null)}
+                        onClick={() => setSelectedPhotoIndex(null)}
                     >
+                        {/* Close Button */}
+                        <button 
+                            className="absolute top-6 right-6 text-white/70 hover:text-white z-50 p-2 bg-white/10 rounded-full transition-all"
+                            onClick={() => setSelectedPhotoIndex(null)}
+                        >
+                            <X size={28} />
+                        </button>
+
+                        {/* Navigation - PREV */}
+                        <button 
+                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all group scale-90 md:scale-100"
+                            onClick={handlePrevPhoto}
+                        >
+                            <ChevronLeft size={40} className="group-hover:-translate-x-1 transition-transform" />
+                        </button>
+
+                        {/* Main Image */}
                         <motion.div
-                            className="relative max-w-4xl max-h-full"
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0.8 }}
+                            key={selectedPhotoIndex}
+                            className="relative max-w-[90vw] max-h-[85vh] flex items-center justify-center"
+                            initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, x: -20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <button 
-                                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition"
-                                onClick={() => setSelectedPhoto(null)}
-                            >
-                                <X size={24} />
-                            </button>
                             <img 
-                                src={optimizeUrl(selectedPhoto, { width: 1600 })} 
-                                alt="Selected" 
-                                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                src={optimizeUrl(photos[selectedPhotoIndex], { width: 1600 })} 
+                                alt={`Wedding ${selectedPhotoIndex}`} 
+                                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10"
                             />
+                            
+                            {/* Counter Label */}
+                            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-sm font-mono tracking-widest">
+                                {selectedPhotoIndex + 1} / {photos.length}
+                            </div>
                         </motion.div>
+
+                        {/* Navigation - NEXT */}
+                        <button 
+                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all group scale-90 md:scale-100"
+                            onClick={handleNextPhoto}
+                        >
+                            <ChevronRight size={40} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -467,6 +518,38 @@ if (loading)
                 )
             }
 
+            {/* Curtain Animation Overlay */}
+            <AnimatePresence>
+                {isOpening && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex"
+                    >
+                        <motion.div 
+                            initial={{ x: "-100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "-100%" }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                            className="w-1/2 h-full bg-[#1a1103] border-r border-[#BF953F]/20 flex items-center justify-end"
+                        >
+                             <div className="w-px h-1/2 bg-gradient-to-b from-transparent via-[#BF953F]/40 to-transparent" />
+                        </motion.div>
+                        <motion.div 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                            className="w-1/2 h-full bg-[#1a1103] border-l border-[#BF953F]/20 flex items-center justify-start"
+                        >
+                            <div className="w-px h-1/2 bg-gradient-to-b from-transparent via-[#BF953F]/40 to-transparent" />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
                 {
                 stage === "intro" && (
                     <motion.div key="intro" className="absolute inset-0"
@@ -497,6 +580,41 @@ if (loading)
                     </motion.div>
                 )
             }
+                {/* Floating Particles Overlay - Globally active in info stage */}
+                {stage === "info" && (
+                    <div className="fixed inset-0 pointer-events-none z-[45] overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                        {[...Array(35)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                className="absolute text-[#BF953F]/30"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 110}%`,
+                                    willChange: 'transform, opacity'
+                                }}
+                                animate={{
+                                    y: [0, -200, 0],
+                                    x: [0, Math.random() * 80 - 40, 0],
+                                    opacity: [0, 0.6, 0],
+                                    rotate: [0, 180, 360],
+                                    scale: [0.4, 1.1, 0.4]
+                                }}
+                                transition={{
+                                    duration: Math.random() * 15 + 10,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                    delay: Math.random() * 10,
+                                }}
+                            >
+                                <Sparkles 
+                                    size={Math.random() * 10 + 6} 
+                                    className="drop-shadow-[0_0_10px_rgba(191,149,63,0.5)]"
+                                />
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
                 {
                 stage === "info" && (
                     <motion.div key="info" className="absolute inset-0 w-full h-full overflow-y-auto"
@@ -506,10 +624,25 @@ if (loading)
                         exit="exit">
                         {/* Top-right music toggle */}
                         <Button onClick={toggleMusic}
-                            variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500 fixed top-4 right-4 z-50 ">
-                            {
-                            isMusicPlaying ? <Volume2 size={20} className="text-yellow-400"/> : <VolumeX size={20} className="text-yellow-400"/>
-                        } </Button>
+                            variant="outline" size="icon" className="rounded-full bg-amber-900/80 border-[#BF953F]/40 fixed top-4 right-4 z-[60] backdrop-blur-md shadow-lg shadow-black/20 group overflow-hidden">
+                            <motion.div
+                                animate={isMusicPlaying ? { rotate: 360 } : { rotate: 0 }}
+                                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                className="relative flex items-center justify-center"
+                            >
+                                {isMusicPlaying ? (
+                                    <>
+                                        <div className="absolute inset-0 bg-[#BF953F]/20 blur-md rounded-full" />
+                                        <Music size={20} className="text-[#BF953F] relative z-10" />
+                                    </>
+                                ) : (
+                                    <VolumeX size={20} className="text-white/50" />
+                                )}
+                            </motion.div>
+                            
+                            {/* Inner Shine */}
+                            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 pointer-events-none" />
+                        </Button>
 
                         {/* Bottom floating buttons */}
                         <div className="fixed  bottom-6 left-1/2 -translate-x-1/2 flex justify-between gap-3 z-50 bg-amber-900  rounded-full p-4 border-1 border-amber-500 by">
@@ -535,7 +668,7 @@ if (loading)
                                     () => scrollToSection("gallery")
                                 }
                                 variant="outline" size="icon" className="rounded-full bg-amber-800 border-amber-500">
-                                <Image size={24} className="text-yellow-400"/>
+                                <ImageIcon size={24} className="text-yellow-400"/>
                             </Button>
                             <Button onClick={
                                     () => scrollToSection("gift")
@@ -561,9 +694,11 @@ if (loading)
                                 className="fixed left-[50%] top-1/2 h-[120%] w-[120%]  object-cover -z-10  bg-cover"
                                 // className="fixed top-0 left-0 w-full h-full object-cover -z-10"
  
-                                style={
-                                    {touchAction: 'none', transform: "translate(-50%, -50%) scale(1.15)"}
-                                }/> {/* Scrollable sections */}
+                                style={{
+                                    touchAction: 'none', 
+                                    transform: "translate(-50%, -50%) scale(1.15) translateZ(0)",
+                                    willChange: 'transform'
+                                }}/> {/* Scrollable sections */}
                             <section id="calendar" className="flex flex-col items-center justify-center bg-transparent">
                                 
                                 <div className="flex flex-col items-center justify-center">
@@ -598,17 +733,27 @@ if (loading)
                                     Ms. Hour Mengchou
                                 </div>
                             </section>
-                            <div className="flex flex-row items-center justify-center pt-28 pb-6 w-full" id="">
-                                <div className="flex-1 px-4">
-                                    <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
-                                </div>
-                                <div className="px-6 items-center justify-center flex">
-                                    <div style={{fontFamily: "Moulpali", fontSize: "1.5rem", color: "#BF953F"}} className="golden-metallic-text">
-                                        វិរៈកម្មវិធី
+                            <div className="flex flex-col items-center justify-center pt-28 pb-10 w-full" id="">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    whileInView={{ scale: 1 }}
+                                    viewport={{ once: true }}
+                                    className="w-16 h-16 rounded-full bg-amber-900/40 border-2 border-[#BF953F]/40 flex items-center justify-center mb-6 shadow-lg backdrop-blur-md"
+                                >
+                                    <History size={32} className="text-[#BF953F]" />
+                                </motion.div>
+                                <div className="flex flex-row items-center justify-center w-full">
+                                    <div className="flex-1 px-4">
+                                        <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                     </div>
-                                </div>
-                                <div className="flex-1 px-4">
-                                    <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
+                                    <div className="px-6 items-center justify-center flex">
+                                        <div style={{fontFamily: "Moulpali", fontSize: "1.6rem", color: "#BF953F"}} className="golden-metallic-text">
+                                            កម្មវិធីមង្គលការ
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 px-4">
+                                        <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
+                                    </div>
                                 </div>
                             </div>
                             <section id="" className="flex items-center justify-center bg-transparent">
@@ -635,24 +780,45 @@ if (loading)
                                 <div className="flex-1 px-4">
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
-                               
-
                             </div>
-
-                            
-                            
                             <div className="relative z-20 -mb-16 mt-8 w-full flex flex-col items-center gap-6">
-                                <button 
+                                <motion.button 
                                     onClick={addToGoogleCalendar}
-                                    className="flex items-center gap-2 px-6 py-3 bg-[#BF953F]/10 border border-[#BF953F] rounded-full text-[#BF953F] hover:bg-[#BF953F] hover:text-white transition-all duration-300 backdrop-blur-sm group cursor-pointer"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="relative group cursor-pointer"
                                 >
-                                    <CalendarPlus size={20} />
-                                    <span style={{fontFamily: "Taprom", fontSize: "0.9rem"}}>ដាក់កាលវិភាគ</span>
-                                </button>
+                                    {/* Subtle Glow */}
+                                    <div className="absolute inset-0 bg-[#BF953F]/10 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    
+                                    <img 
+                                        src="https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770953900/btn_save_date_azptcx.png" 
+                                        alt="Save The Date" 
+                                        className="w-60 h-auto relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-all duration-300 group-hover:drop-shadow-[0_15px_30px_rgba(191,149,63,0.5)]"
+                                    />
+
+                                    {/* Shine overlay effect */}
+                                    <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none w-full h-full">
+                                        <motion.div 
+                                            className="absolute inset-y-0 -left-[100%] w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
+                                            animate={{ 
+                                                left: ["-100%", "200%"] 
+                                            }}
+                                            transition={{ 
+                                                duration: 3, 
+                                                repeat: Infinity, 
+                                                repeatDelay: 2,
+                                                ease: "linear"
+                                            }}
+                                        />
+                                    </div>
+                                </motion.button>
                                 <WeddingCountdown
                                     weddingDate="2026-03-22T17:00:00"
                                 />
                              </div>
+
+
                             <section id="photo" className="relative z-10 flex justify-center items-center px-4 pb-8">
                                 <motion.div 
                                     initial={{ opacity: 0, scale: 0.98 }}
@@ -695,16 +861,44 @@ if (loading)
                                     
                                     {/* Video Container */}
                                     <div className="relative p-1.5 overflow-hidden rounded-xl border-2 border-amber-500/50 bg-[#1a1103]/40 backdrop-blur-sm shadow-[0_15px_45px_rgba(0,0,0,0.5)]">
-                                        <video src={"https://ik.imagekit.io/lhuqyhzsd/video/VID_20251017122915592.MP4/ik-video.mp4?updatedAt=1762941643378"}
-                                            autoPlay
-                                            muted
-                                            loop
-                                            playsInline
-                                            className="w-full h-auto max-h-[75vh] object-cover rounded-lg"
-                                        />
+                                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+                                            {/* High-res Thumbnail Fallback (Shows while loading) */}
+                                            <img 
+                                                src="https://img.youtube.com/vi/hin00ElLsYw/maxresdefault.jpg" 
+                                                alt=""
+                                                className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
+                                            />
+
+                                            {/* Looping "GIF-style" Video Preview */}
+                                            <iframe 
+                                                src="https://www.youtube.com/embed/hin00ElLsYw?autoplay=1&mute=1&loop=1&playlist=hin00ElLsYw&controls=0&modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&enablejsapi=1"
+                                                title="Wedding Video Loop"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                className="absolute inset-0 w-full h-full scale-[1.12] border-0"
+                                                style={{ pointerEvents: 'none' }}
+                                            />
+
+                                            {/* Click Overlay to open in new tab */}
+                                            <div 
+                                                className="absolute inset-0 z-20 cursor-pointer group/vid flex flex-col items-center justify-center bg-transparent active:bg-black/20 transition-all duration-300"
+                                                onClick={() => window.open("https://www.youtube.com/watch?v=hin00ElLsYw", "_blank")}
+                                            >
+                                                <motion.div 
+                                                    whileHover={{ scale: 1.15 }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                    className="w-16 h-16 rounded-full bg-amber-500/20 backdrop-blur-xl border border-amber-500/40 flex items-center justify-center opacity-0 group-hover/vid:opacity-100 transition-all duration-300 shadow-[0_0_20px_rgba(191,149,63,0.5)]"
+                                                >
+                                                    <Play size={32} className="text-amber-500 fill-amber-500 ml-1" />
+                                                </motion.div>
+                                                
+                                                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 opacity-0 group-hover/vid:opacity-100 transition-opacity duration-300">
+                                                    <span className="text-[10px] text-white/90 tracking-widest font-medium">WATCH FULL VIDEO</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                         
                                         {/* Overlay Glow */}
-                                        <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-amber-500/20 shadow-[inset_0_0_100px_rgba(0,0,0,0.15)]" />
+                                        <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-amber-500/20 shadow-[inset_0_0_100px_rgba(0,0,0,0.2)] z-30" />
                                     </div>
 
                                     {/* Corner Accents */}
@@ -734,7 +928,7 @@ if (loading)
                                         }
                                     }/>
                             </div> */}
-                            <div className="flex flex-row items-center justify-center pt-28 pb-4 w-full" id="map">
+                            <div className="flex flex-row items-center justify-center pt-16 pb-4 w-full" id="map">
                                 <div className="flex-1 px-4">
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent" />
                                 </div>
@@ -776,17 +970,39 @@ if (loading)
                                     <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-2 border-r-2 border-[#BF953F] rounded-br-lg shadow-[0_0_10px_rgba(191,149,63,0.3)]" />
                                 </motion.div>
                             </section>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 pb-4" id="map-button">
-                                <a href="https://maps.app.goo.gl/eDfFnEecVdKs1NyM9" target="_blank" 
-                                   className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-amber-500/30 rounded-xl text-amber-500 hover:bg-amber-500 hover:text-white transition-all duration-300 w-48 justify-center group cursor-pointer">
-                                    <Map size={20} />
-                                    <span className="font-bold">Google Maps</span>
-                                </a>
-                                <a href="https://waze.com/ul/hw232cn7j8" target="_blank" 
-                                   className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-amber-500/30 rounded-xl text-amber-500 hover:bg-amber-500 hover:text-white transition-all duration-300 w-48 justify-center group cursor-pointer">
-                                    <Navigation size={20} />
-                                    <span className="font-bold">Waze</span>
-                                </a>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 pb-4" id="map-button">
+                                <motion.a 
+                                    href="https://maps.app.goo.gl/eDfFnEecVdKs1NyM9" 
+                                    target="_blank" 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="relative group cursor-pointer"
+                                >
+                                    {/* Subtle Glow behind the image */}
+                                    <div className="absolute inset-0 bg-[#BF953F]/10 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    
+                                    <img 
+                                        src="https://ik.imagekit.io/lhuqyhzsd/button/btn_loc.png?updatedAt=1762930145649" 
+                                        alt="Google Maps" 
+                                        className="w-60 h-auto relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-all duration-300 group-hover:drop-shadow-[0_15px_30px_rgba(191,149,63,0.5)]"
+                                    />
+                                    
+                                    {/* Shine overlay effect */}
+                                    <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none w-full h-full">
+                                        <motion.div 
+                                            className="absolute inset-y-0 -left-[100%] w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
+                                            animate={{ 
+                                                left: ["-100%", "200%"] 
+                                            }}
+                                            transition={{ 
+                                                duration: 3, 
+                                                repeat: Infinity, 
+                                                repeatDelay: 2,
+                                                ease: "linear"
+                                            }}
+                                        />
+                                    </div>
+                                </motion.a>
                             </div>
 
                             <div className="flex flex-row items-center justify-center pt-32 pb-8 w-full" id="gallery">
@@ -823,30 +1039,38 @@ if (loading)
                                                 return (
                                                     <motion.div 
                                                         key={index}
-                                                        initial={{ opacity: 0, y: 30 }}
+                                                        initial={{ opacity: 0, y: 20 }}
                                                         whileInView={{ opacity: 1, y: 0 }}
+                                                        whileHover={{ 
+                                                            scale: 1.02,
+                                                            rotateY: index % 2 === 0 ? 1 : -1,
+                                                            rotateX: index % 2 === 0 ? -1 : 1,
+                                                            transition: { duration: 0.4 }
+                                                        }}
                                                         viewport={{ once: true, margin: "-50px" }}
-                                                        transition={{ duration: 0.6, delay: (index % 5) * 0.1 }}
+                                                        transition={{ duration: 0.6, delay: (index % 5) * 0.05 }}
                                                         className={`${
                                                             isFullWidth 
-                                                            ? "col-span-4 row-span-4 h-80 sm:h-[500px] md:h-[650px]" 
-                                                            : "col-span-2 h-64 sm:h-[350px] md:h-[450px]"
-                                                        } bg-amber-900/10 rounded-xl overflow-hidden relative group`}
+                                                            ? "col-span-4 h-64 sm:h-[400px] md:h-[500px]" 
+                                                            : "col-span-2 h-48 sm:h-[300px] md:h-[350px]"
+                                                        } bg-amber-900/10 rounded-xl overflow-hidden relative group cursor-pointer shadow-lg hover:shadow-[#BF953F]/20 transition-all duration-500`}
+                                                        style={{ perspective: "1000px", willChange: "transform, opacity" }}
+                                                        onClick={() => setSelectedPhotoIndex(index)}
                                                     >
-                                                        <img 
+                                                        <img
                                                             src={optimizeUrl(photo, isFullWidth ? { width: 1000 } : { width: 500 })} 
                                                             alt={`Gallery ${index}`} 
                                                             loading="lazy"
-                                                            className="object-cover w-full h-full rounded-lg cursor-pointer transition-transform duration-700 group-hover:scale-110" 
-                                                            onClick={() => setSelectedPhoto(photo)}
+                                                            className="object-cover w-full h-full rounded-lg transition-transform duration-700 group-hover:scale-110" 
                                                         />
                                                         {/* Subtle Overlay on Hover */}
                                                         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
                                                             <div className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 scale-50 group-hover:scale-100 transition-transform duration-500">
-                                                                <Image size={24} className="text-white" />
+                                                                <ImageIcon size={24} className="text-white" />
                                                             </div>
                                                         </div>
                                                     </motion.div>
+
                                                 );
                                             })}
                                         </div>
@@ -857,7 +1081,7 @@ if (loading)
                                     <div className="absolute -bottom-2 -right-2 w-10 h-10 border-b-2 border-r-2 border-[#BF953F] rounded-br-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.4)]" />
                                 </motion.div>
                             </section>
-                            <div className="flex flex-row items-center justify-center pt-32 pb-8 w-full" id="gift">
+                            <div className="flex flex-row items-center justify-center pt-20 pb-6 w-full" id="gift">
                                 <div className="flex-1 px-4">
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
@@ -870,88 +1094,127 @@ if (loading)
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
                             </div>
+
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="max-w-xl mx-auto px-8 pt-4 pb-2 text-center"
+                            >
+                                <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent mb-4" />
+                                <p style={{fontFamily: "Taprom", fontSize: "1.1rem"}} className="text-[#BF953F] leading-relaxed italic drop-shadow-lg">
+                                    លោកអ្នកក៏អាចផ្ញើចំណងដៃតាមរយៈធនាគារ <span style={{fontFamily: "Moulpali"}} className="text-[#BF953F] golden-metallic-text font-bold">ABA</span> របស់ពួកយើងបាន 
+                                   ដោយស្កេន QR Code ឬ ចុចប៊ូតុងខាងក្រោម៖
+                                </p>
+                                <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent mt-4" />
+                            </motion.div>
                             
-                            <section id="gift-framed" className="relative z-10 flex justify-center items-center px-20 py-8">
+                            <section id="gift-framed" className="relative z-10 flex justify-center items-center px-6 py-8">
                                 <motion.div 
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
                                     viewport={{ once: true }}
-                                    className="relative group max-w-2xl w-full"
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    className="relative group max-w-lg w-full"
                                 >
-                                    {/* Gold Accent Ring */}
-                                    <div className="absolute -inset-2 border border-amber-500/20 rounded-[2rem] pointer-events-none" />
+                                    {/* Ornate Inner Glow */}
+                                    <div className="absolute inset-x-8 -inset-y-4 bg-amber-500/5 blur-3xl rounded-[3rem] pointer-events-none" />
                                     
-                                    {/* Gift Image Container */}
-                                    <div className="relative p-1.5 overflow-hidden rounded-xl border-2 border-amber-500/50 bg-[#1a1103]/40 backdrop-blur-sm shadow-[0_15px_45px_rgba(0,0,0,0.5)]">
-                                        <img 
-                                            src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770811125/IMG_2866_keyqfy.jpg", { width: 250 })} 
-                                            className="w-full h-auto rounded-lg shadow-inner" 
-                                            alt="Wedding Gift Presentation" 
-                                            loading="lazy" 
-                                        />
+                                    {/* Traditional Frame Style Container */}
+                                    <div className="relative p-2 overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-[#1a1103]/60 backdrop-blur-md shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
+                                        <div className="relative rounded-xl overflow-hidden">
+                                            <img 
+                                                src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770811125/IMG_2866_keyqfy.jpg", { width: 500 })} 
+                                                className="w-full h-auto object-cover transform transition-transform duration-[2s] group-hover:scale-105" 
+                                                alt="Wedding Gift Presentation" 
+                                                loading="lazy" 
+                                            />
+                                            {/* Subtle Inner Highlight Overlay */}
+                                            <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
+                                            {/* Vignette */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+                                        </div>
                                     </div>
 
-                                    {/* Smaller Corner Accents for Gift */}
-                                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-[#BF953F] rounded-tl-lg" />
-                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-2 border-r-2 border-[#BF953F] rounded-br-lg" />
+                                    {/* Ornate Corner Accents */}
+                                    <div className="absolute -top-3 -left-3 w-12 h-12 border-t-2 border-l-2 border-[#BF953F] rounded-tl-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.3)]" />
+                                    <div className="absolute -bottom-3 -right-3 w-12 h-12 border-b-2 border-r-2 border-[#BF953F] rounded-br-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.3)]" />
                                 </motion.div>
                             </section>
-                            <div className="flex flex-row items-center justify-center pt-8 pb-8 w-full">
-                                <div className="flex-1 px-4">
-                                    <Separator className="bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent"/>
+                           
+
+                            
+                            <div className="flex flex-row items-center justify-center pt-2 pb-6 w-full max-w-2xl mx-auto px-4 text-center">
+                                <div className="flex-1">
+                                    <Separator className="bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent h-px" />
                                 </div>
-                                <div className="px-6 items-center justify-center flex">
-                                    <div style={{fontFamily: "Taprom", fontSize: "1rem"}} className="text-[#BF953F]/80 whitespace-nowrap italic">
-                                        ចុចលើកាដូខាងក្រោមនេះ
+                                <div className="px-8 relative">
+                                    <div style={{fontFamily: "Moulpali", fontSize: "1.3rem", color: "#BF953F"}} className="golden-metallic-text tracking-wide">
+                                        ដោយសេចក្តីគោរព និងមេត្រីភាព
                                     </div>
+                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
                                 </div>
-                                <div className="flex-1 px-4">
-                                    <Separator className="bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent"/>
+                                <div className="flex-1">
+                                    <Separator className="bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent h-px" />
                                 </div>
                             </div>
 
                             <motion.div 
-                                initial={{ opacity: 0 }}
-                                whileInView={{ opacity: 1 }}
-                                className="flex flex-row items-center justify-center"
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="flex flex-row items-center justify-center gap-6 sm:gap-12 pb-12"
                             >
-                                <div style={{ height: 50, width: 50, rotate: "270deg", marginTop:'30px'}}>
-                                    <Lottie
-                                            animationData={arrowAnimationData}
-                                            loop={true} 
-                                            autoplay={true} 
-                                    />
-                                </div>
-                                
                                 <motion.div 
-                                    style={{ height: 140, width: 140 }}
-                                    animate={{ 
-                                        scale: [1, 1.1, 1],
-                                        filter: ["drop-shadow(0 0 0px #BF953F00)", "drop-shadow(0 0 15px #BF953F66)", "drop-shadow(0 0 0px #BF953F00)"]
-                                    }}
-                                    transition={{ 
-                                        duration: 2, 
-                                        repeat: Infinity,
-                                        ease: "easeInOut" 
-                                    }}
-                                    className="cursor-pointer relative z-20"
+                                    animate={{ x: [0, 8, 0], opacity: [0.3, 0.8, 0.3] }}
+                                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                                    className="hidden md:block"
                                 >
-                                    <a href="https://pay.ababank.com/oRF8/bqjwmrsc" target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                                        <Lottie
-                                            animationData={giftAnimationData}
-                                            loop={true} 
-                                            autoplay={true} 
-                                        />
-                                    </a>
+                                    <ChevronRight size={32} className="text-[#BF953F]/40" />
                                 </motion.div>
                                 
-                                <div style={{ height: 50, width: 50, rotate: "90deg", marginTop:'30px'}}>
-                                    <Lottie
-                                            animationData={arrowAnimationData}
-                                            loop={true} 
-                                            autoplay={true} 
+                                <motion.a 
+                                    href="https://pay.ababank.com/oRF8/bqjwmrsc" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    whileHover={{ scale: 1.05, y: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="relative group cursor-pointer z-20"
+                                >
+                                    {/* Elevated Aura */}
+                                    <div className="absolute inset-0 bg-[#BF953F]/15 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                    
+                                    <img 
+                                        src="https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770953899/btn_gift_ybpzwc.png" 
+                                        alt="Send Gift" 
+                                        className="w-64 h-auto relative z-10 drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:drop-shadow-[0_20px_40px_rgba(191,149,63,0.4)]"
                                     />
-                                </div>
+
+                                    {/* Refined Shine Effect */}
+                                    <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none">
+                                        <motion.div 
+                                            className="absolute inset-y-0 -left-[100%] w-1/2 bg-gradient-to-r from-transparent via-white/15 to-transparent skew-x-[35deg]"
+                                            animate={{ 
+                                                left: ["-100%", "200%"] 
+                                            }}
+                                            transition={{ 
+                                                duration: 4, 
+                                                repeat: Infinity, 
+                                                repeatDelay: 1,
+                                                ease: "easeInOut"
+                                            }}
+                                        />
+                                    </div>
+                                </motion.a>
+                                
+                                <motion.div 
+                                    animate={{ x: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
+                                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                                    className="hidden md:block"
+                                >
+                                    <ChevronLeft size={32} className="text-[#BF953F]/40" />
+                                </motion.div>
                             </motion.div>
 
                              <section className="relative z-10 px-6 py-20 pb-0">
