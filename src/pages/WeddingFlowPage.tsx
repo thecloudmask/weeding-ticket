@@ -519,13 +519,13 @@ if (loading)
                                 transition={{ delay: 8, duration: 1.5, ease: "easeOut" }}
                                 className="flex flex-col items-center w-full"
                             >
-                                <h1 className="flex flex-row items-center mb-14 gap-2">
+                                <h1 className="flex flex-wrap items-center justify-center mb-14 gap-x-2 gap-y-1 max-w-[90vw] px-4">
                                     <span 
-                                        className="font-bold tracking-wide uppercase"
+                                        className="font-bold tracking-wide uppercase leading-tight"
                                         style={{ 
                                             color: '#FFFFFF',
                                             fontFamily: guest?.title && /[\u1780-\u17FF]/.test(guest.title) ? "'Kantumruy Pro'" : "'Poppins'", 
-                                            fontSize: "1.4rem",
+                                            fontSize: "clamp(1.1rem, 4vw, 1.4rem)",
                                             textShadow: `
                                                 0 0 8px rgba(255, 255, 255, 0.8),
                                                 0 0 15px rgba(255, 215, 0, 0.6),
@@ -536,11 +536,11 @@ if (loading)
                                         {guest?.title}
                                     </span>
                                     <span 
-                                        className="font-bold tracking-wide"
+                                        className="font-bold tracking-wide leading-tight"
                                         style={{ 
                                             color: '#FFFFFF',
                                             fontFamily: guest?.fullName && /[\u1780-\u17FF]/.test(guest.fullName) ? "'Kantumruy Pro'" : "'Poppins'", 
-                                            fontSize: "1.8rem",
+                                            fontSize: "clamp(1.4rem, 5vw, 1.8rem)",
                                             textShadow: `
                                                 0 0 8px rgba(255, 255, 255, 0.8),
                                                 0 0 15px rgba(255, 215, 0, 0.6),
@@ -1054,61 +1054,54 @@ if (loading)
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
                             </div>
-                            <section id="gallery-framed" className="relative z-10 flex justify-center items-center px-4 py-8">
+                            <section id="gallery-framed" className="relative z-10 flex justify-center items-center px-4 py-8" style={{ contentVisibility: 'auto', contain: 'paint' } as any}>
                                 <div className="relative group max-w-6xl w-full">
                                     {/* Traditional Gold Frame */}
                                     <div className="absolute -inset-2 border border-amber-500/30 rounded-[2rem] pointer-events-none" />
                                     
-                                    {/* Main Gallery Container - Removed backdrop-blur for performance */}
-                                    <div className="relative p-2 overflow-hidden rounded-xl border-2 border-amber-500/50 bg-[#1a1103]/60 shadow-[0_15px_45px_rgba(0,0,0,0.5)]">
+                                    {/* Main Gallery Container - Removed expensive filters */}
+                                    <div className="relative p-2 overflow-hidden rounded-xl border-2 border-amber-500/50 bg-[#1a1103]/80 shadow-2xl">
                                         <div className="grid grid-cols-4 gap-3 sm:gap-4 p-1 sm:p-2">
                                             {photos.map((photo, index) => {
                                                 const patternIndex = index % 5;
                                                 const isFullWidth = patternIndex === 0;
                                                 
                                                 return (
-                                                    <motion.div 
+                                                    <div 
                                                         key={index}
-                                                        initial={{ opacity: 0, y: 30 }}
-                                                        whileInView={{ opacity: 1, y: 0 }}
-                                                        whileHover={{ 
-                                                            scale: 1.01,
-                                                            transition: { duration: 0.3 }
-                                                        }}
-                                                        viewport={{ once: true, margin: "-20px" }}
-                                                        transition={{ duration: 0.7, delay: (index % 3) * 0.05 }}
                                                         className={`${
                                                             isFullWidth 
                                                             ? "col-span-4 h-64 sm:h-[400px] md:h-[500px]" 
                                                             : "col-span-2 h-48 sm:h-[300px] md:h-[350px]"
-                                                        } bg-amber-900/10 rounded-xl overflow-hidden relative group cursor-pointer shadow-lg hover:shadow-[#BF953F]/20 transition-all duration-500`}
+                                                        } bg-amber-900/10 rounded-xl overflow-hidden relative group cursor-pointer transition-transform duration-300 active:scale-95`}
                                                         style={{ 
-                                                            willChange: "transform, opacity",
-                                                            transform: "translateZ(0)" // Force GPU acceleration
+                                                            willChange: "transform",
+                                                            transform: "translateZ(0)"
                                                         }}
                                                         onClick={() => setSelectedPhotoIndex(index)}
                                                     >
                                                         <img
-                                                            src={optimizeUrl(photo, isFullWidth ? { width: 1000 } : { width: 400 })} 
+                                                            src={optimizeUrl(photo, isFullWidth ? { width: 800 } : { width: 350 })} 
                                                             alt={`Gallery ${index}`} 
                                                             loading="lazy"
-                                                            className="object-cover w-full h-full rounded-lg transition-transform duration-700 group-hover:scale-105" 
+                                                            decoding="async"
+                                                            className="object-cover w-full h-full rounded-lg transition-transform duration-500 group-hover:scale-105" 
                                                         />
-                                                        {/* Subtle Overlay on Hover */}
-                                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
-                                                            <div className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 scale-50 group-hover:scale-100 transition-transform duration-500">
+                                                        {/* Simple Static Overlay instead of blur */}
+                                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
+                                                            <div className="p-3 rounded-full bg-amber-500/20 border border-amber-500/30">
                                                                 <ImageIcon size={24} className="text-white" />
                                                             </div>
                                                         </div>
-                                                    </motion.div>
+                                                    </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
 
                                     {/* Khmer Traditional Corner Accents */}
-                                    <div className="absolute -top-2 -left-2 w-10 h-10 border-t-2 border-l-2 border-[#BF953F] rounded-tl-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.4)]" />
-                                    <div className="absolute -bottom-2 -right-2 w-10 h-10 border-b-2 border-r-2 border-[#BF953F] rounded-br-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.4)]" />
+                                    <div className="absolute -top-2 -left-2 w-10 h-10 border-t-2 border-l-2 border-[#BF953F] rounded-tl-[1.5rem] shadow-[#BF953F]/20" />
+                                    <div className="absolute -bottom-2 -right-2 w-10 h-10 border-b-2 border-r-2 border-[#BF953F] rounded-br-[1.5rem] shadow-[#BF953F]/20" />
                                 </div>
                             </section>
                             <div className="flex flex-row items-center justify-center pt-20 pb-6 w-full" id="gift">
@@ -1159,6 +1152,39 @@ if (loading)
                                         <div className="relative rounded-xl overflow-hidden">
                                             <img 
                                                 src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770811125/IMG_2866_keyqfy.jpg", { width: 500 })} 
+                                                className="w-full h-auto object-cover transform transition-transform duration-[2s] group-hover:scale-105" 
+                                                alt="Wedding Gift Presentation" 
+                                                loading="lazy" 
+                                            />
+                                            {/* Subtle Inner Highlight Overlay */}
+                                            <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
+                                            {/* Vignette */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+                                        </div>
+                                    </div>
+
+                                    {/* Ornate Corner Accents */}
+                                    <div className="absolute -top-3 -left-3 w-12 h-12 border-t-2 border-l-2 border-[#BF953F] rounded-tl-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.3)]" />
+                                    <div className="absolute -bottom-3 -right-3 w-12 h-12 border-b-2 border-r-2 border-[#BF953F] rounded-br-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.3)]" />
+                                </motion.div>
+                            </section>
+
+                            <section id="gift-framed" className="relative z-10 flex justify-center items-center px-14 py-8">
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    className="relative group max-w-lg w-full"
+                                >
+                                    {/* Ornate Inner Glow */}
+                                    <div className="absolute inset-x-8 -inset-y-4 bg-amber-500/5 blur-3xl rounded-[3rem] pointer-events-none" />
+                                    
+                                    {/* Traditional Frame Style Container */}
+                                    <div className="relative p-2 overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-[#1a1103]/60 backdrop-blur-md shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
+                                        <div className="relative rounded-xl overflow-hidden">
+                                            <img 
+                                                src={optimizeUrl("https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770984411/rielqr_afhekx.jpg", { width: 500 })} 
                                                 className="w-full h-auto object-cover transform transition-transform duration-[2s] group-hover:scale-105" 
                                                 alt="Wedding Gift Presentation" 
                                                 loading="lazy" 
