@@ -734,7 +734,7 @@ if (loading)
  
                                 style={{
                                     touchAction: 'none', 
-                                    transform: "translate(-50%, -50%) scale(1.15) translateZ(0)",
+                                    transform: "translate(-50%, -50%) scale(1.16) translateZ(0)",
                                     willChange: 'transform'
                                 }}/> {/* Scrollable sections */}
                             <section id="calendar" className="flex flex-col items-center justify-center bg-transparent">
