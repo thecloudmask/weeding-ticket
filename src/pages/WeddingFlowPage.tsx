@@ -25,7 +25,8 @@ import {
     ChevronRight,
     Sparkles,
     Music,
-    Share2
+    Share2,
+    Clock
 } from "lucide-react";
 import buttonOpenImg from "../assets/img/buttonOpen.png";
 import telegramQR from "../assets/img/mengley.svg";
@@ -96,7 +97,7 @@ export default function WeddingFlowPage() {
 
 
     const bgVideo: string = "https://res.cloudinary.com/dfs1iwbh3/video/upload/v1770971876/1080_eayu3q.mov";
-    const introVideo: string = "https://ik.imagekit.io/lhuqyhzsd/intro2.mp4";
+    const introVideo: string = "https://res.cloudinary.com/dfs1iwbh3/video/upload/v1770982568/save_the_dated_xb3me4.mov";
     const bgInfoVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-light.mp4?updatedAt=1762929599409";
     
     const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770878132/Picture7_qltipm.png";
@@ -169,7 +170,7 @@ export default function WeddingFlowPage() {
     const [showWishesInput, setShowWishesInput] = useState(false);
     const [showTelegramQR, setShowTelegramQR] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
-    const [isOpening, setIsOpening] = useState(false);
+    const [, setIsOpening] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
     // --- Enhanced UI Hooks ---
@@ -550,33 +551,32 @@ if (loading)
                                         {guest?.fullName}
                                     </span>
                                 </h1>
-                                <motion.img src={buttonOpenImg}
-                                    style={{ filter: 'brightness(1.2) drop-shadow(0 0 15px rgba(255, 215, 0, 0.5))' }}
-                                    className="w-50 mb-20 cursor-pointer"
-                                    onClick={handleOpenClick}
-                                    animate={
-                                        {
-                                            scale: [
-                                                1, 1.1, 1
-                                            ],
-                                            opacity: [1, 0.9, 1]
-                                        }
+                            <motion.img src={buttonOpenImg}
+                                className="w-50 mb-20 cursor-pointer bg-amber-50"
+                                onClick={handleOpenClick}
+                                animate={
+                                    {
+                                        scale: [
+                                            1, 1.1, 1
+                                        ],
+                                        opacity: [1, 0.9, 1]
                                     }
-                                    transition={
-                                        {
-                                            duration: 2,
-                                            repeat: Infinity,
-                                            repeatType: "loop",
-                                            ease: "easeInOut"
-                                        }
-                                    }/>
+                                }
+                                transition={
+                                    {
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        repeatType: "loop",
+                                        ease: "easeInOut"
+                                    }
+                                }/>
                             </motion.div>
                         </div>
                     </motion.div>
                 )
             }
 
-            {/* Curtain Animation Overlay */}
+            {/* Curtain Animation Overlay
             <AnimatePresence>
                 {isOpening && (
                     <motion.div 
@@ -605,7 +605,7 @@ if (loading)
                         </motion.div>
                     </motion.div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence> */}
 
 
                 {
@@ -721,7 +721,7 @@ if (loading)
                             className="fixed bottom-6 left-1/2 flex items-center gap-1.5 sm:gap-4 z-50 bg-[#1a1103]/70 backdrop-blur-xl rounded-full p-2.5 border border-[#BF953F]/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5"
                         >
                             <NavButton onClick={() => scrollToSection("calendar")} icon={Calendar} label="កម្មវិធី" active={false} />
-                            <NavButton onClick={() => scrollToSection("banner-video")} icon={Play} label="វីដេអូ" active={false} />
+                            <NavButton onClick={() => scrollToSection("count-down")} icon={Clock} label="ម៉ោង" active={false} />
                             <NavButton onClick={() => scrollToSection("map")} icon={MapPin} label="ផែនទី" active={false} />
                             <NavButton onClick={() => scrollToSection("gallery")} icon={ImageIcon} label="រូបថត" active={false} />
                             <NavButton onClick={() => scrollToSection("gift")} icon={Gift} label="ចំណងដៃ" active={false} />
@@ -776,7 +776,7 @@ if (loading)
                                     Ms. Hour Mengchou
                                 </div>
                             </section>
-                            <div className="flex flex-col items-center justify-center pt-28 pb-10 w-full" id="">
+                            <div className="flex flex-col items-center justify-center pt-28 pb-10 w-full">
                                 <div className="flex flex-row items-center justify-center w-full">
                                     <div className="flex-1 px-4">
                                         <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
@@ -803,7 +803,7 @@ if (loading)
                                     alt=""
                                     className="max-w-full max-h-full"/>
                             </section> */}
-                               <div className="flex flex-row items-center justify-center pt-28 pb-4" id="time">
+                               <div className="flex flex-row items-center justify-center pt-28 pb-4" id="count-down">
                                 <div className="flex-1 px-4">
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F] to-transparent"/>
                                 </div>
@@ -1015,13 +1015,14 @@ if (loading)
                                 >
                                     {/* Subtle Glow behind the image */}
                                     <div className="absolute inset-0 bg-[#BF953F]/10 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                    
+                                    <div className="flex flex-col items-center justify-center gap-4">
+                                    <div style={{fontFamily: "Moulpali", fontSize: "0.8rem", color: "#BF953F"}} className="golden-metallic-text flex text-center justify-center items-center text-wrap">កម្មវិធីនឹងប្រារព្ធធ្វើឡើងនៅ បាត់ដំបង ស៊ីធីហល៍ <br/> សូមមេត្តាអញ្ជើញចូលរួមដោយមេត្រីភាព</div>
                                     <img 
                                         src="https://ik.imagekit.io/lhuqyhzsd/button/btn_loc.png?updatedAt=1762930145649" 
                                         alt="Google Maps" 
                                         className="w-60 h-auto relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-all duration-300 group-hover:drop-shadow-[0_15px_30px_rgba(191,149,63,0.5)]"
                                     />
-                                    
+                                    </div>
                                     {/* Shine overlay effect */}
                                     <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none w-full h-full">
                                         <motion.div 
@@ -1054,18 +1055,12 @@ if (loading)
                                 </div>
                             </div>
                             <section id="gallery-framed" className="relative z-10 flex justify-center items-center px-4 py-8">
-                                <motion.div 
-                                    initial={{ opacity: 0, scale: 0.98 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 1, ease: "easeOut" }}
-                                    className="relative group max-w-6xl w-full"
-                                >
+                                <div className="relative group max-w-6xl w-full">
                                     {/* Traditional Gold Frame */}
                                     <div className="absolute -inset-2 border border-amber-500/30 rounded-[2rem] pointer-events-none" />
                                     
-                                    {/* Main Gallery Container */}
-                                    <div className="relative p-2 overflow-hidden rounded-xl border-2 border-amber-500/50 bg-[#1a1103]/40 backdrop-blur-sm shadow-[0_15px_45px_rgba(0,0,0,0.5)]">
+                                    {/* Main Gallery Container - Removed backdrop-blur for performance */}
+                                    <div className="relative p-2 overflow-hidden rounded-xl border-2 border-amber-500/50 bg-[#1a1103]/60 shadow-[0_15px_45px_rgba(0,0,0,0.5)]">
                                         <div className="grid grid-cols-4 gap-3 sm:gap-4 p-1 sm:p-2">
                                             {photos.map((photo, index) => {
                                                 const patternIndex = index % 5;
@@ -1074,38 +1069,38 @@ if (loading)
                                                 return (
                                                     <motion.div 
                                                         key={index}
-                                                        initial={{ opacity: 0, y: 20 }}
+                                                        initial={{ opacity: 0, y: 30 }}
                                                         whileInView={{ opacity: 1, y: 0 }}
                                                         whileHover={{ 
-                                                            scale: 1.02,
-                                                            rotateY: index % 2 === 0 ? 1 : -1,
-                                                            rotateX: index % 2 === 0 ? -1 : 1,
-                                                            transition: { duration: 0.4 }
+                                                            scale: 1.01,
+                                                            transition: { duration: 0.3 }
                                                         }}
-                                                        viewport={{ once: true, margin: "-50px" }}
-                                                        transition={{ duration: 0.6, delay: (index % 5) * 0.05 }}
+                                                        viewport={{ once: true, margin: "-20px" }}
+                                                        transition={{ duration: 0.7, delay: (index % 3) * 0.05 }}
                                                         className={`${
                                                             isFullWidth 
                                                             ? "col-span-4 h-64 sm:h-[400px] md:h-[500px]" 
                                                             : "col-span-2 h-48 sm:h-[300px] md:h-[350px]"
                                                         } bg-amber-900/10 rounded-xl overflow-hidden relative group cursor-pointer shadow-lg hover:shadow-[#BF953F]/20 transition-all duration-500`}
-                                                        style={{ perspective: "1000px", willChange: "transform, opacity" }}
+                                                        style={{ 
+                                                            willChange: "transform, opacity",
+                                                            transform: "translateZ(0)" // Force GPU acceleration
+                                                        }}
                                                         onClick={() => setSelectedPhotoIndex(index)}
                                                     >
                                                         <img
-                                                            src={optimizeUrl(photo, isFullWidth ? { width: 1000 } : { width: 500 })} 
+                                                            src={optimizeUrl(photo, isFullWidth ? { width: 1000 } : { width: 400 })} 
                                                             alt={`Gallery ${index}`} 
                                                             loading="lazy"
-                                                            className="object-cover w-full h-full rounded-lg transition-transform duration-700 group-hover:scale-110" 
+                                                            className="object-cover w-full h-full rounded-lg transition-transform duration-700 group-hover:scale-105" 
                                                         />
                                                         {/* Subtle Overlay on Hover */}
-                                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
+                                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
                                                             <div className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 scale-50 group-hover:scale-100 transition-transform duration-500">
                                                                 <ImageIcon size={24} className="text-white" />
                                                             </div>
                                                         </div>
                                                     </motion.div>
-
                                                 );
                                             })}
                                         </div>
@@ -1114,7 +1109,7 @@ if (loading)
                                     {/* Khmer Traditional Corner Accents */}
                                     <div className="absolute -top-2 -left-2 w-10 h-10 border-t-2 border-l-2 border-[#BF953F] rounded-tl-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.4)]" />
                                     <div className="absolute -bottom-2 -right-2 w-10 h-10 border-b-2 border-r-2 border-[#BF953F] rounded-br-[1.5rem] shadow-[0_0_15px_rgba(191,149,63,0.4)]" />
-                                </motion.div>
+                                </div>
                             </section>
                             <div className="flex flex-row items-center justify-center pt-20 pb-6 w-full" id="gift">
                                 <div className="flex-1 px-4">
@@ -1148,7 +1143,7 @@ if (loading)
                                 <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent mt-4" />
                             </motion.div>
                             
-                            <section id="gift-framed" className="relative z-10 flex justify-center items-center px-6 py-8">
+                            <section id="gift-framed" className="relative z-10 flex justify-center items-center px-14 py-8">
                                 <motion.div 
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     whileInView={{ opacity: 1, scale: 1 }}
@@ -1188,7 +1183,7 @@ if (loading)
                                     <Separator className="bg-gradient-to-r from-transparent via-[#BF953F]/40 to-transparent h-px" />
                                 </div>
                                 <div className="px-8 relative">
-                                    <div style={{fontFamily: "Moulpali", fontSize: "1.3rem", color: "#BF953F"}} className="golden-metallic-text tracking-wide">
+                                    <div style={{fontFamily: "Moulpali", fontSize: "1.1rem", color: "#BF953F"}} className="golden-metallic-text tracking-wide">
                                         ដោយសេចក្តីគោរព និងមេត្រីភាព
                                     </div>
                                     <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
@@ -1501,7 +1496,7 @@ if (loading)
                                 <div className="mt-28 flex flex-col items-center gap-16 pb-20">
                                     
                                     {/* Obsidian Glass Card for Maximum Contrast */}
-                                    <div className="w-full max-w-sm flex flex-col items-center gap-12 p-10 rounded-[50px] bg-black/50 border border-white/10 backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.3)]">
+                                    <div className="w-full max-w-sm flex flex-col items-center gap-12 p-10 rounded-[50px] bg-black/60 border border-white/10 backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.3)]">
                                         
                                         {/* Technical Credits */}
                                         <div className="flex flex-col items-center gap-8 w-full">
@@ -1589,7 +1584,7 @@ if (loading)
                                         
                                         <p 
                                             style={{ fontFamily: "'Poppins'", fontSize: "0.75rem" }}
-                                            className="text-[#FFDD73]/60 font-light"
+                                            className="text-[#FFDD73] font-light"
                                         >
                                             ©{new Date().getFullYear()} RAMY & MENGCHOU រក្សាសិទ្ធិគ្រប់យ៉ាង។
                                         </p>

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { utils, writeFile } from 'xlsx';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   collection,
@@ -49,7 +51,8 @@ import {
   MapPin,
   RefreshCw,
   Printer,
-  ChevronDown
+  ChevronDown,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
@@ -316,6 +319,49 @@ export default function GuestPaymentPage() {
     window.print();
   };
 
+  const handleExportExcel = () => {
+    try {
+      // 1. Prepare data with Khmer headers
+      const dataToExport = filteredGuests.map((guest, index) => ({
+        'ល.រ': index + 1,
+        'ឈ្មោះពេញ': guest.name,
+        'ត្រូវជា?': guest.category,
+        'អាសយដ្ឋាន/ទីកន្លែង': guest.location || 'N/A',
+        'វិធីចងដៃ': guest.paymentMethod,
+        'រូបិយប័ណ្ណ': guest.currency,
+        'ចំនួនទឹកប្រាក់': guest.amount,
+        'ចំណាំ': guest.note || ''
+      }));
+
+      // 2. Create worksheet and workbook
+      const ws = utils.json_to_sheet(dataToExport);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, 'បញ្ជីចំណងដៃ');
+
+      // 3. Set column widths for better readability
+      const wscols = [
+        { wch: 6 },  // No.
+        { wch: 25 }, // Name
+        { wch: 15 }, // Category
+        { wch: 25 }, // Location
+        { wch: 20 }, // Payment Method
+        { wch: 10 }, // Currency
+        { wch: 15 }, // Amount
+        { wch: 30 }, // Note
+      ];
+      ws['!cols'] = wscols;
+
+      // 4. Generate filename with current date
+      const date = new Date().toLocaleDateString('km-KH').replace(/\//g, '-');
+      writeFile(wb, `របាយការណ៍ចំណងដៃ_${date}.xlsx`);
+      
+      toast.success('ទាញយកឯកសារ Excel រួចរាល់');
+    } catch (error) {
+      console.error('Error exporting excel:', error);
+      toast.error('មានបញ្ហាក្នុងការទាញយកឯកសារ Excel');
+    }
+  };
+
   const handleSendThanks = (guest: GuestPayment) => {
     const amountStr = `${guest.currency === 'USD' ? '$' : '៛'}${guest.amount.toLocaleString()}`;
     const message = `សូមអរគុណលោក ${guest.name} ដែលបានចូលរួមកម្មវិធីមង្គលការ និងផ្តល់កិត្តិយសជាចំណងដៃចំនួន ${amountStr}។ សូមជូនពរសុខភាពល្អ សំណាងល្អ និងជោគជ័យគ្រប់ភារកិច្ច! 🙏✨`;
@@ -419,7 +465,16 @@ export default function GuestPaymentPage() {
               className="h-12 px-6 border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-2.5 font-bold text-base transition-all rounded-xl shadow-sm cursor-pointer"
             >
               <Printer size={20} className="text-secondary" />
-              បោះពុម្ពរបាយការណ៍
+              បោះពុម្ព
+            </Button>
+
+            <Button
+              onClick={handleExportExcel}
+              variant="outline"
+              className="h-12 px-6 border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-2.5 font-bold text-base transition-all rounded-xl shadow-sm cursor-pointer"
+            >
+              <FileSpreadsheet size={20} className="text-emerald-500" />
+              ទាញយក Excel
             </Button>
             
             <Button
@@ -917,6 +972,7 @@ export default function GuestPaymentPage() {
             visibility: visible;
           }
           .print-section {
+            display: block !important;
             position: absolute;
             left: 0;
             top: 0;
@@ -978,7 +1034,7 @@ export default function GuestPaymentPage() {
       `}</style>
 
       {/* Hidden Print Content */}
-      <div className="hidden print-section">
+      <div className="hidden print:block print-section">
         <div className="report-header">
           <div className="report-title">របាយការណ៍កត់ត្រាចំណងដៃ</div>
           <div className="report-date">កាលបរិច្ឆេទ៖ {dateStr}</div>
