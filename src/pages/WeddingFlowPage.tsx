@@ -100,7 +100,7 @@ export default function WeddingFlowPage() {
     const introVideo: string = "https://res.cloudinary.com/dfs1iwbh3/video/upload/v1770982568/save_the_dated_xb3me4.mov";
     const bgInfoVideo: string = "https://ik.imagekit.io/lhuqyhzsd/bg-light.mp4?updatedAt=1762929599409";
     
-    const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770994369/%E1%9E%98%E1%9E%84%E1%9F%92%E1%9E%82%E1%9E%9B%E1%9E%80%E1%9E%B6%E1%9E%9A_sjczci.png";
+    const info001: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1771054480/%E1%9E%98%E1%9E%84%E1%9F%92%E1%9E%82%E1%9E%9B%E1%9E%80%E1%9E%B6%E1%9E%9A_igzp6b.png";
     const photoBanner: string = "https://res.cloudinary.com/dfs1iwbh3/image/upload/v1770891072/0F4A7939_aodi0b.jpg";
 
     const photos = [
@@ -472,13 +472,12 @@ if (loading)
                 )}
             </AnimatePresence>
             
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
                 {
                 stage === "invite" && (
                     <motion.div key="invite" className="absolute inset-0"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                     >
                         <video src={bgVideo}
                             autoPlay
@@ -605,11 +604,11 @@ if (loading)
 
                 {
                 stage === "intro" && (
-                    <motion.div key="intro" className="absolute inset-0"
-                        variants={fadeVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit">
+                    <motion.div key="intro" className="absolute inset-0 bg-black"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
                         <video src={introVideo}
                             autoPlay
                             playsInline
